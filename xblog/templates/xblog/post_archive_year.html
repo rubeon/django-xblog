@@ -1,0 +1,15 @@
+{% extends "xblog/post_archive.html" %}
+{% block extratitle %} {{ year.year }} {% endblock %}
+{% block blogheaders %}<meta name="description" content="{{ site.name }}: Yearly Archive for {{ year.year }} Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}" />{% endblock %}
+{% block yearnav %}
+<li>{{ year.year }}</li>
+{% endblock %}
+
+{% block maincontent %}
+    {% block monthnav %}{% endblock %}
+    {% block daynav %}{% endblock %}
+	{% for object in object_list %}
+	{% ifchanged %}<h2><a href="{{ object.get_month_archive_url }}">{{ object.pub_date|date:"F Y"}}</a></h2>{% endifchanged %}
+    {% include "includes/post_template.txt" %}
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% load bootstrap3 %}
+    <table class="table table-bordered table-condensed table-striped">
+        <tr>
+            <th>Metric</th><th>Value</th>
+        </tr>
+        <tr>
+            <td>Flesch Reading Ease</td> <td> {{ readability.flesch_reading_ease }}</td>
+        </tr>
+        <tr>
+            <td>SMOG:</td><td>{{ readability.smog }}</td>
+        </tr>
+        <tr>
+            <td>Coleman Liau:</td><td>{{ readability.coleman_liau }}</td>
+        </tr>
+        <tr>
+            <td>Reader Index:</td><td> {{ readability.consensus }}</td>
+        </tr>            
+    </table>
+

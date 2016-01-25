@@ -1,0 +1,43 @@
+{% extends "xblog/blog_base.html" %}
+{% load markdown_deux_tags %}
+{% load bootstrap3 %}
+{% block blogheaders %}<meta name="description" content="{{ site.name }} Archive: Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}" />{% endblock %}
+{% block navigation %}
+<li><a href="/blog">Blog</a></li>
+{% block yearnav %}<!-- <li>yearnav</li> -->{% endblock %}
+{% block monthnav %}<!-- <li>monthnav</li> -->{% endblock %}
+{% block daynav %}<!-- <li>daynav</li> -->{% endblock %}
+{% block objectnav %}{% endblock %}
+{% endblock %}
+{% block maincontent %}
+	<!-- begin main blog overview -->
+	{% for object in latest %}
+    {% include "includes/post_template.txt" %}
+	{% endfor %}
+	<!-- end main blog overview -->
+          
+{% endblock %}
+{% block pager %}
+    <!-- file: post_archive.html -->
+      <nav>
+        <ul class="pager">
+        {% if page_obj.has_previous %}
+          <li>
+              <a href="?page={{ page_obj.previous_page_number }}">
+              {% bootstrap_icon "circle-arrow-left" %} Previous
+             </a>
+          </li>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <li>
+              <a href="?page={{ page_obj.next_page_number }}">
+                  Next {% bootstrap_icon "circle-arrow-right" %}
+              </a>
+          </li>
+        {% endif %}
+        </ul>
+      </nav>
+{% endblock %}
+
+<!-- numreplies -->
+<!-- /numreplies -->

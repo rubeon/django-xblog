@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load  blog_tags %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block extrahead %}
+<link rel="alternate" href="{{ site.url }}" type="application/rss+xml" title="RSS 2.0" />
+<link rel="EditURI" href="{{ site.get_current_site.domain }}xmlrpc/" type="application/rsd+xml" title="RSD" />
+<link rel="archives" href="{{  request.build_absolute_uri }}archive/" title="Archives" charset="utf-8" />
+<link rel="pingback" href="{{ site.url }}xmlrpc/" />
+<link rel="stylesheet" type="text/css" href="{% static "pygments-css/zenburn.css" %}">
+<link rel="stylesheet" type="text/css" href="{% static "xblog-css/xblog.css" %}">
+<script src="{% static "js/rango-ajax.js" %}"></script>
+{% block blogheaders %}<meta name="description" content="{{ site.name }}" />{% endblock %}
+{% endblock %}
+{% block subpagetitle %}blog{% endblock %}
+{% block pagestyle %}blog{% endblock %}
+{% block leftnav %}<!-- leftnav -->{% endblock %}
+{% block navigation %}
+    <li>Blog</li>
+{% endblock %}
+{% block yearnav %}
+...
+{% endblock %}
+
+<!-- main content -->
+{% block maincontent %}
+
+Main content goes here.
+
+{% endblock %}
+<!-- /main content -->
+
+{% block rightnav %}
+{% get_blogroll %}
+<div id="blogroll" class="sidebar-module">
+	<h3>Blogroll {% bootstrap_icon "rss" %}</h3>
+	{% for cat in blogroll_categories %}
+	<h4>{{ cat.title }}</h4>
+	<ul class="list-unstyled">{% for link in cat.link_set.all|dictsort:"link_name" %}
+	   <li class="blogroll"><a href="{{link.url}}">{{ link.link_name }}</a></li>
+        {% endfor %}
+        </ul>
+{% endfor %}
+	<p class="blogrollheader">Archives</p>
+	{% get_blog_months %}
+	{% for month in blog_months %}
+	{% ifchanged %}{% if not forloop.first %}<br />{% endif %}<span class="blogrollheader"><a href="/blog/{{month.year}}">{{month|date:"Y"|lower}}</a></span><br />{% endifchanged %}
+		<a href="/blog/{{ month|date:"Y/M"|lower }}/" title="{{ month|date:"M Y" }}">{{ month|date:"M" }}</a>
+		{% ifequal month.month 6  %}<br />{% endifequal %}{% endfor %}
+	</div><!-- /blogroll -->
+    
+{% endblock %}
+

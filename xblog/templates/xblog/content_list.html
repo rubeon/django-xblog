@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load cache %}
+{% block extrahead %}
+{% cache 0 splitpane %}
+<link rel="stylesheet" href="{% static "xblog-css/split-pane.css" %}" type="text/css">
+{% endcache %}
+{% endblock %}
+{% load bootstrap3 %}
+{% block extrajs %}
+<script>
+/*
+function loadPage(urlToLoad) {
+    $('#preview_pane').load(urlToLoad, function () {
+    });
+}
+
+function togglePublish(urlToLoad) {
+    alert(urlToLoad);
+}
+
+ 
+$(document).ready(function () {
+    function loadPage(urlToLoad) {
+        $.ajax({
+            type: "GET",
+            alert(urlToLoad);
+            url: urlToLoad,
+            data: dataString,
+            success: function (returnedData) {
+                $('#preview_pane').html(returnedData);
+            }
+        });
+    }
+});
+
+*/
+</script>
+{% endblock %}
+{% block maincontent %}
+<!-- show a list of posts on the left -->
+<container id="#mycontainer">
+    <div class="list-group col-md-4" id="left">
+        {% for post in post_list %}
+              <!-- whne you click this, it should really load the object form in the right-hand pane... -->
+              <a href="javascript:void(0)" class="list-group-item" onclick="loadPage('{{ post.get_absolute_url }}preview/', '#preview-pane');"><b>{{ post.title }}</b><br />
+              <small>Published: {{ post.pub_date| date:"d F, Y" }}</small></a>
+        {% endfor %}
+    </div>
+<div class="col-md-8" id="right">
+    <div id="preview-pane">
+        <h1> {% bootstrap_icon "circle-arrow-left" %} Click to Preview</h1>
+    </div>
+</div>
+
+</container>
+{% endblock %}

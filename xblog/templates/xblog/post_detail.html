@@ -1,0 +1,30 @@
+{% extends "xblog/post_archive.html" %}
+<!-- post_detail.html -->
+{% load markdown_deux_tags %}
+{% block extratitle %} {{ object.title }}{% endblock %}
+{% block blogheaders %}<meta name="description" value="{{ site.name }}: {{ object.title }}">{% endblock %}
+
+{% block yearnav %}<li><a href="../../../">{{object.pub_date|date:"Y"}}</a>{% endblock %}
+{% block monthnav %}<li><a href="../../">{{object.pub_date|date:"F"}}</a></li>{% endblock %}
+{% block daynav %}<li><a href="../">{{object.pub_date|date:"d"}}</a></li>{% endblock %}
+{% block extrarightnav %}
+	
+{% endblock %}	
+{% block maincontent %}
+<!-- {{ object.post_format }} -->
+{% if object.post_format == 'video' %}
+<!-- a video! -->
+{% include "includes/post_video.txt" %}
+{% else %}
+<!-- it's a post!  -->
+{% include "includes/post_template.txt" %}
+{% endif %}
+<!-- includes -->
+	{% for pb in object.pingback_set.all %}
+	{% ifchanged %}<h3>Pingbacks</h3>
+		<a id="pingbacks"></a>{% endifchanged %}
+		<div class="comment">
+			<span class="comnum"><a href="{{pb.source_url}}">{{ pb.title }}</a>&rarr;<a href="{{ pb.target_url }}"></a></span>
+		</div><!-- /comment -->
+	{% endfor %}
+{% endblock %}

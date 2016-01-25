@@ -1,0 +1,15 @@
+{% extends "xblog/blog_base.html" %}
+{% load bootstrap3 %}
+{% block maincontent %}
+<form action="" method="post" accept-charset="utf-8">
+	{% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+        <button type="submit" class="btn btn-primary">
+            {% bootstrap_icon "star" %} Submit
+        </button>
+    {% endbuttons %}
+
+</form>
+{% endblock %}
+

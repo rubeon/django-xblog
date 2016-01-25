@@ -1,0 +1,8 @@
+{% load bootstrap3 %}
+<form class="navbar-form navbar-right" role="search" action="/search/">
+        <input type="hidden" id="id_models_0" name="models" title="" value="xblog.post">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search"  id="id_q" name="q">
+        </div>
+        <button type="submit" class="btn btn-default">{% bootstrap_icon "search" %}</button>
+</form>

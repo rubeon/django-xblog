@@ -1,0 +1,45 @@
+/*
+
+This is a file to provide a split-pane, scrollable view.
+
+*/
+body, html {
+    margin: 0;
+    overflow: hidden;
+    height:100%;
+    position: static;
+}
+
+#left {
+/* position: absolute; */
+    top: 100px;
+    bottom: 0;
+    left: 0;
+    width: 25%;
+    height: 75%;
+    overflow-y: scroll;
+    position: absolute;
+}
+  
+  #right {
+    /*    top: 0; bottom: 0; right: 0;  position: relative; display: block; */
+    width: 70%;
+    top: 100px;
+    left: 25%;
+    height: 75%;
+    border: 1px solid #ccc;
+    position: absolute;
+    overflow-y: scroll;
+}
+
+
+/* #left {
+  height:80%;
+  overflow-y: scroll;
+}
+
+#right {
+  height:80%;
+  overflow-y: scroll;
+}
+  */
