@@ -18,10 +18,18 @@ from django.contrib.auth.models import User
 import django
 # from django.contrib.comments.models import FreeComment
 from django.conf import settings
-from xblog.models import Tag, Post, Blog, Author, FILTER_CHOICES
-from views.xmlrpc_views import public
+from .models import Tag, Post, Blog, Author, Category, FILTER_CHOICES
+
 import BeautifulSoup
-from ping_modes import send_pings
+from .ping_modes import send_pings
+
+try:
+    from xmlrpc.client import Fault
+    from xmlrpc.client import DateTime
+except ImportError:  # Python 2
+    from xmlrpclib import Fault
+    from xmlrpclib import DateTime
+
 
 # import config
 # import xmlrpclib.DateTime
@@ -38,6 +46,8 @@ logger = logging.getLogger(__name__)
 # Add these to your existing RPC methods in settings.py
 # i.e.
 
+LOGIN_ERROR = 801
+PERMISSION_DENIED = 803
 
 
 def authenticated(pos=1):
@@ -70,51 +80,110 @@ def authenticated(pos=1):
 def full_url(url):
     return urlparse.urljoin(settings.SITE_URL, url)
 
-@public
-@authenticated()
-def metaWeblog_getCategories(user, blogid, struct={}):
-    """ takes the blogid, and returns a list of categories
-    struct:
-    string categoryId
-    string parentId
-    string categoryName
-    string categoryDescription
-    string description: Name of the category, equivalent to categoryName.
-    string htmlUrl
-    string rssUrl
-    
-    
+# @public
+# @authenticated()
+
+def get_user(username, apikey, blogid=None):
     """
-    logger.debug("metaWeblog_getCategories called")
-    categories = Category.objects.all()
-    res=[]
-    logger.warn("Categories no longer supported")
-    # for c in categories:
-    #     struct={}
-    #     struct['categoryId'] = str(c.id)
-    #     # struct['parentId'] = str(0)
-    #     struct['categoryName']= c.title
-    #     struct['parentId'] = ''
-    #     struct['title'] = c.title
-    #     # if c.description == '':
-    #     #     struct['categoryDescription'] = c.title
-    #     # else:
-    #     #     struct['categoryDescription'] = c.description
-    #     # struct['description'] = struct['categoryDescription']
-    #     struct['htmlUrl'] = "http://dev.ehw.io"
-    #     res.append(struct)
+    checks if a user is authorized to make this call
+    """
+    try:
+        user = User.objects.get(**{'username__exact':username})
+    except User.DoesNotExist:
+        raise Fault(LOGIN_ERROR, 'Username is incorrect.')
+    if not apikey == user.author.remote_access_key:
+        raise Fault(LOGIN_ERROR, 'Password is invalid.')
+    if not user.author.remote_access_enabled:
+        raise Fault(PERMISSION_DENIED, 'Remote access not enabled for this user.')
+    # if not author.is_staff or not author.is_active:
+    #    raise Fault(PERMISSION_DENIED, _('User account unavailable.'))
+    #        raise Fault(PERMISSION_DENIED, _('User cannot %s.') % permission)
+
+    return user    
+
+def is_user_blog(user, blogid):
+    """
+    checks if the blog in question belongs to the use
+    """
+    
+    blog = Blog.objects.get(pk=blogid)
+    
+    if blog.owner==user:
+        return True
+    else:
+        return False
+
+def metaWeblog_getCategories(blogid, username, password):
+    """ 
+    takes the blogid, and returns a list of categories
+    
+    Parameters
+        int blogid
+        string username
+        string password
+    Return Values
+        array
+        struct
+        string categoryId
+        string parentId
+        string categoryName
+        string categoryDescription
+        string description: Name of the category, equivalent to categoryName.
+        string htmlUrl
+        string rssUrl
+    """
+    logger.debug("metaWeblog_getCategories entered")
+    user = get_user(username, password)
+    if not is_user_blog(user, blogid):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    categories = Category.objects.all().filter(blog__id=blogid)
+    logger.warn("Categories are deprecated")
+    for c in categories:
+        struct={}
+        struct['categoryId'] = str(c.id)
+        # struct['parentId'] = str(0)
+        struct['categoryName']= c.title
+        struct['parentId'] = ''
+        struct['title'] = c.title
+        # if c.description == '':
+        #     struct['categoryDescription'] = c.title
+        # else:
+        #     struct['categoryDescription'] = c.description
+        # struct['description'] = struct['categoryDescription']
+        struct['htmlUrl'] = "http://dev.ehw.io"
+        res.append(struct)
     logger.debug(res)
     return res
 
-@public
+
 @authenticated()
-def metaWeblog_newMediaObject(user, blogid, struct):
-    """ returns struct with url..."""
+def metaWeblog_newMediaObject(blogid, username, password, data):
+    """ 
+    Parameters
+        int blogid
+        string username
+        string password
+        struct data
+        string name: Filename.
+        string type: File MIME type.
+        string bits: base64-encoded binary data.
+        bool overwrite: Optional. Overwrite an existing attachment of the same name. (Added in WordPress 2.2)
+    Return Values
+        struct
+            string id (Added in WordPress 3.4)
+            string file: Filename.
+            string url
+            string type
+    """
     logger.debug( "metaWeblog_newMediaObject called")
+    user = get_user(username, password)
+    if not is_user_blog(user, blogid):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    
     upload_dir = "blog_uploads/%s" % urllib.quote(user.username)
-    bits       = struct['bits']
-    mime       = struct['type']
-    name       = struct['name']    
+    bits       = data['bits']
+    mime       = data['type']
+    name       = data['name']    
     savename   = name
     logger.debug( "savename: %s" %  savename)
     save_path = os.path.join(upload_dir, savename)
@@ -123,14 +192,14 @@ def metaWeblog_newMediaObject(user, blogid, struct):
     logger.debug("Path: %s" % path)
     res = {}
     res['url']= default_storage.url(path)
+    res['id'] = ''
+    res['file'] = savename
+    res['type'] = mime
     logger.debug(res)
     return res
 
 
- 
-@public
-@authenticated()
-def metaWeblog_newPost(user, blogid, struct, publish="PUBLISH"):
+def metaWeblog_newPost(blogid, username, password, struct, publish="PUBLISH"):
     """ mt's newpost function..."""
     logger.debug( "metaWeblog.newPost called")
     logger.debug("user: %s" % user)
@@ -138,6 +207,11 @@ def metaWeblog_newPost(user, blogid, struct, publish="PUBLISH"):
     logger.debug("struct: %s" % struct)
     logger.debug("publish: %s" % publish)
     body = struct['description']
+    
+    user = get_user(username, password)
+    if not is_user_blog(user, blogid):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    
     try:
         logger.info("Checking for passed blog parameter")
         blog = Blog.objects.get(pk=blogid)
@@ -184,7 +258,7 @@ def metaWeblog_newPost(user, blogid, struct, publish="PUBLISH"):
     logger.debug("newPost finished")
     return post.id
     
-@public
+# @public
 @authenticated()
 def metaWeblog_editPost(user, postid, struct, publish):
     logger.debug( "metaWeblog_editPost")
@@ -245,7 +319,7 @@ def metaWeblog_editPost(user, postid, struct, publish):
 #     print "P saved"
 #     return True
 # 
-@public
+# @public
 @authenticated()
 def metaWeblog_getPost(user, postid):
     """ returns an existing post """
@@ -254,7 +328,7 @@ def metaWeblog_getPost(user, postid):
     # post.create_date = format_date(datetime.datetime.now())
     return post_struct(post)
 
-@public
+# @public
 @authenticated(pos=2)
 def blogger_getRecentPosts(user, appkey, blogid, num_posts=50):
     """ returns a list of recent posts """
@@ -263,7 +337,7 @@ def blogger_getRecentPosts(user, appkey, blogid, num_posts=50):
     posts = blog.post_set.order_by('-pub_date')[:num_posts]
     return [post_struct(post) for post in posts]
 
-@public
+# @public
 @authenticated()
 def metaWeblog_getRecentPosts(user, blogid, num_posts=50):
     """ returns a list of recent posts..."""
@@ -275,7 +349,7 @@ def metaWeblog_getRecentPosts(user, blogid, num_posts=50):
     return [post_struct(post) for post in posts]
     
 
-@public
+# @public
 @authenticated()
 def blogger_getUserInfo(user, appkey):
     """ returns userinfo for particular user..."""
@@ -293,7 +367,7 @@ def blogger_getUserInfo(user, appkey):
     struct['userid'] = str(user.id)
     return struct
 
-@public
+# @public
 @authenticated()
 def blogger_getUsersBlogs(user, appkey):
     """
@@ -325,7 +399,7 @@ def blogger_getUsersBlogs(user, appkey):
     logger.debug(res)
     return res
 
-@public
+# @public
 @authenticated()
 def metaWeblog_getUsersBlogs(user, appkey):
     # the original metaWeblog API didn't include this
@@ -346,7 +420,7 @@ def metaWeblog_getUsersBlogs(user, appkey):
     logger.debug(res)
     return res
     
-@public
+# @public
 @authenticated()
 def mt_publishPost(user, postid):
     """
@@ -355,7 +429,7 @@ def mt_publishPost(user, postid):
     """
     return True
     
-@public
+# @public
 @authenticated(pos=2)
 def blogger_deletePost(user, appkey, post_id, publish):
     """ deletes the specified post..."""
@@ -367,7 +441,7 @@ def blogger_deletePost(user, appkey, post_id, publish):
     post.delete()
 
     return True
-@public
+# @public
 @authenticated()
 def mt_getCategoryList(user, blogid):
     """ takes the blogid, and returns a list of categories"""
@@ -448,7 +522,7 @@ def setTags(post, struct, key="tags"):
     post.save()
     return True
 
-@public
+# @public
 def mt_supportedMethods(*args):
     """ returns the xmlrpc-server's list of supported methods"""
     logger.debug( "mt.listSupportedMethods called...")
@@ -459,7 +533,7 @@ def mt_supportedMethods(*args):
         res.append(method[1])
     return res
 
-@public
+# @public
 @authenticated()
 def mt_getPostCategories(user, postid):
     """
@@ -491,7 +565,7 @@ def mt_getPostCategories(user, postid):
     # 
     return res
 
-@public
+# @public
 def mt_supportedTextFilters():
     """ 
     
@@ -505,7 +579,7 @@ def mt_supportedTextFilters():
     return res
 
     
-@public
+# @public
 @authenticated()
 def mt_setPostCategories(user, postid, cats):
     """
@@ -532,7 +606,7 @@ def mt_setPostCategories(user, postid, cats):
     return True
 
 
-@public
+# @public
 @authenticated()
 def xblog_getIdList(user,blogid):
     # 

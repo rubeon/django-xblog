@@ -237,7 +237,16 @@ class Author(models.Model):
 
         super(self.__class__, self).save()
         
-        
+class Category(models.Model):
+    """
+    Keeps track of post categories
+    """
+    title = models.CharField(blank=False, max_length=255)
+    description = models.CharField(blank=True, max_length=100)
+    blog = models.ForeignKey("Blog")
+    
+    def __unicode__(self):
+        return self.title
 
 class Post(models.Model):
     """A Blog Entry, natch"""
@@ -253,7 +262,7 @@ class Post(models.Model):
     guid = models.CharField(blank=True, max_length=255)
     body = models.TextField(blank=True)
     summary = models.TextField(blank=True)
-    # categories = models.ManyToManyField(Category)
+    categories = models.ManyToManyField(Category)
     # primary_category_name = models.ForeignKey(Category, related_name='primary_category_set', blank=True, null=True)
     tags = models.ManyToManyField(Tag, blank=True)
     blog = models.ForeignKey('Blog')

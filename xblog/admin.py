@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 
-from xblog.models import LinkCategory, Link, Pingback, Tag, Author, Post, Blog
+from xblog.models import LinkCategory, Link, Pingback, Tag, Author, Post, Blog, Category
 from xblog.models import STATUS_CHOICES, FILTER_CHOICES
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -78,3 +78,7 @@ class BlogAdmin(admin.ModelAdmin):
     search_fields = ('title',)
 admin.site.register(Blog, BlogAdmin)
 
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('title','blog')
+    search_fields = ('title',)
+admin.site.register(Category, CategoryAdmin)
