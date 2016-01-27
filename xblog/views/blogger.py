@@ -20,10 +20,6 @@ import django
 from django.conf import settings
 from ..models import Tag, Post, Blog, Author, Category, FILTER_CHOICES
 
-def owner_required(func):
-    def 
-    
-
 def getUserInfo(user, appkey):
     """ returns userinfo for particular user..."""
     logger.debug( "blogger.getUserInfo called")

@@ -13,9 +13,10 @@ from ..models import Post
 from ..models import Blog
 
 from django.contrib.sites.models import Site
-from django.contrib.auth.decorators import login_required
+
 
 # @login_required
+
 class PostCreateView(SuccessMessageMixin, CreateView):
     """
     View for adding a post

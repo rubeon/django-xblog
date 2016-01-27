@@ -14,6 +14,8 @@ Created by Eric Williams on 2007-02-27.
 from django.conf.urls import include, patterns, url
 from django.contrib.sites.models import Site
 from django.contrib.sitemaps import GenericSitemap
+from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 
 from .models import Post
 from .views.blog import AuthorCreateView
@@ -35,13 +37,15 @@ from .views.post import PostUpdateView
 from .views.post import PostDeleteView
 
 
+
+
 year_archive_pattern =r'^(?P<year>[0-9]{4})/$'
 month_archive_pattern=r'^(?P<year>\d{4})/(?P<month>\w{3})/$'
 day_archive_pattern  =r'^(?P<year>\d{4})/(?P<month>\w{3})/(?P<day>\d{1,2})/$'
 # date_detail_pattern=r'^(?P<year>\d{4})/(?P<month>\w{3})/(?P<day>\d{2})/(?P<slug>[-\w]+)/$'
 date_detail_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/$'
 
-post_edit_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/edit/$'
+post_update_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/edit/$'
 post_delete_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/delete/$'
 post_stats_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/stats/$'
 post_preview_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/preview/$'
@@ -71,15 +75,15 @@ urlpatterns = [
     url(post_set_publish_pattern, 'xblog.views.edit.set_publish', 
         name="post-set-publish"),
 
-    url(r'add_post/$', PostCreateView.as_view(), name='post-add'),
-    url(post_edit_pattern, PostUpdateView.as_view(), name="post-edit" ),
-    url(post_delete_pattern, PostDeleteView.as_view(), name="post-delete" ),
+    url(r'add_post/$', login_required(PostCreateView.as_view()), name='post-add'),
+    url(post_update_pattern, login_required(PostUpdateView.as_view()), name="post-edit" ),
+    url(post_delete_pattern, login_required(PostDeleteView.as_view()), name="post-delete" ),
 
-    url(r'add_blog/$', BlogCreateView.as_view(), name='blog-add'),
+    url(r'add_blog/$', login_required(BlogCreateView.as_view()), name='blog-add'),
+    url(blog_update_pattern, login_required(BlogUpdateView.as_view()), name='blog-update'),
     url(blog_detail_pattern, BlogDetailView.as_view(), name='blog-detail'),
-    url(blog_update_pattern, BlogUpdateView.as_view(), name='blog-update'),
 
-    url(r'add_author/$', AuthorCreateView.as_view(), name='author-add'),
+    url(r'add_author/$', staff_member_required(AuthorCreateView.as_view()), name='author-add'),
     url(author_detail_pattern, AuthorDetailView.as_view(), name='author-detail'),
         
     url(r'content_list/$', 'xblog.views.edit.content_list', 

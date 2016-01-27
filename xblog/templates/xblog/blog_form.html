@@ -5,7 +5,12 @@
 {% bootstrap_form_errors form layout='inline' %}
 <form action="" method="post">{% csrf_token %}
     {% bootstrap_form form %}
-    <input type="submit" value="Save" />
+    {% buttons %}
+        <button type="submit" class="btn btn-primary">
+            {% bootstrap_icon "star" %} Save
+        </button>
+    {% endbuttons %}
+
 </form>
 
 {% endblock %}
