@@ -17,7 +17,7 @@ import sys
 from django.conf import settings
 try:
     from django.contrib.auth import get_user_model
-    User = settings.AUTH_USER_MODEL
+    User = get_user_model() # settings.AUTH_USER_MODEL
 except ImportError:
     from django.contrib.auth.models import User 
 
@@ -93,6 +93,9 @@ def get_user(username, apikey, blogid=None):
     """
     checks if a user is authorized to make this call
     """
+    logger.debug("%s.get_user entered" % __name__)
+    logger.debug("user: %s" % username)
+    logger.debug("apikey: %s" % apikey)
     try:
         user = User.objects.get(**{'username__exact':username})
     except User.DoesNotExist:
@@ -162,7 +165,6 @@ def metaWeblog_getCategories(blogid, username, password):
     return res
 
 
-@authenticated()
 def metaWeblog_newMediaObject(blogid, username, password, data):
     """ 
     Parameters
@@ -182,6 +184,9 @@ def metaWeblog_newMediaObject(blogid, username, password, data):
             string type
     """
     logger.debug( "metaWeblog_newMediaObject called")
+    logger.debug("username: %s " % username)
+    logger.debug("password: %s " % password)
+    logger.debug("blogid: %s" % blogid)
     user = get_user(username, password)
     if not is_user_blog(user, blogid):
         raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
@@ -208,7 +213,7 @@ def metaWeblog_newMediaObject(blogid, username, password, data):
 def metaWeblog_newPost(blogid, username, password, struct, publish="PUBLISH"):
     """ mt's newpost function..."""
     logger.debug( "metaWeblog.newPost called")
-    logger.debug("user: %s" % user)
+    logger.debug("username: %s" % username)
     logger.debug("blogid: %s" % blogid)
     logger.debug("struct: %s" % struct)
     logger.debug("publish: %s" % publish)
@@ -245,15 +250,17 @@ def metaWeblog_newPost(blogid, username, password, struct, publish="PUBLISH"):
     categories = struct.get("categories", [])
     # logger.debug("Setting categories: %s" % categories)
     logger.warn("Categories no longer supported")
-    # clist = []
-    # for category in categories:
-    #     try:
-    #         c = Category.objects.filter(blog=blog, title=category)[0]
-    #         logger.debug("Got %s" % c)
-    #         clist.append(c)
-    #     except Exception, e:
-    #         logger.warn(str(e))
-    # post.categories=clist
+    clist = []
+    for category in categories:
+         try:
+             logger.info("Settings category %s" % category)
+             c = Category.objects.filter(blog=blog, title=category)[0]
+             logger.debug("Got %s" % c)
+             clist.append(c)
+         except Exception, e:
+             logger.debug(20*'-')
+             logger.warn(str(e))
+    post.categories=clist
     post.save()
     logger.info("Post %s saved" % post)
     logger.info("Setting Tags")
@@ -265,10 +272,17 @@ def metaWeblog_newPost(blogid, username, password, struct, publish="PUBLISH"):
     return post.id
     
 # @public
-@authenticated()
-def metaWeblog_editPost(user, postid, struct, publish):
-    logger.debug( "metaWeblog_editPost")
-    post = Post.objects.get(id=postid)
+def metaWeblog_editPost(postid, username, password, struct, publish):
+    logger.debug( "metaWeblog_editPost entered")
+    user = get_user(username, password)
+    # figure out the post owner...
+    post = Post.objects.get(id=postid)    
+    # if not is_user_blog(user, blogid):
+    #     raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    if post.author.user != user:
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
+    
+
     title = struct.get('title', None)
     if title is not None:
         post.title = title
@@ -292,7 +306,7 @@ def metaWeblog_editPost(user, postid, struct, publish):
         post.body = body
         # todo - parse out technorati tags
     if user:
-        post.author = user 
+        post.author = user.author
     
     if publish:
       post.status = "publish"
@@ -326,13 +340,20 @@ def metaWeblog_editPost(user, postid, struct, publish):
 #     return True
 # 
 # @public
-@authenticated()
-def metaWeblog_getPost(user, postid):
+
+def metaWeblog_getPost(postid, username, password):
     """ returns an existing post """
     logger.debug( "metaWeblog.getPost called ")
+    user = get_user(username,  password)
+    # if not is_user_blog(user, blogid):
+    #     raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
     post = Post.objects.get(pk=postid)
+    if post.author.user != user:
+       raise Fault(PERMISSION_DENIED, 'Permission denied for %s on postid %s' % (user, postid))
     # post.create_date = format_date(datetime.datetime.now())
-    return post_struct(post)
+    p = post_struct(post)
+    logger.debug(p)
+    return p
 
 # @public
 @authenticated(pos=2)
@@ -344,12 +365,12 @@ def blogger_getRecentPosts(user, appkey, blogid, num_posts=50):
     return [post_struct(post) for post in posts]
 
 # @public
-@authenticated()
-def metaWeblog_getRecentPosts(user, blogid, num_posts=50):
+def metaWeblog_getRecentPosts(blogid, username, password, num_posts=50):
     """ returns a list of recent posts..."""
     logger.debug( "metaWeblog.getRecentPosts called...")
     logger.debug( "user %s, blogid %s, num_posts %s" % (user, blogid, num_posts))
     logger.info("WordPress compatibility, ignoring blogid")
+    user = get_user(username, password, blogid=blogid)
     # blog = Blog.objects.get(id=blogid)
     posts = user.author.post_set.order_by('-pub_date')[:num_posts]
     return [post_struct(post) for post in posts]
@@ -374,8 +395,8 @@ def blogger_getUserInfo(user, appkey):
     return struct
 
 # @public
-@authenticated()
-def blogger_getUsersBlogs(user, appkey):
+# @authenticated()
+def blogger_getUsersBlogs(appkey, username, password):
     """
     Parameters
     string appkey: Not applicable for WordPress, can be any value and will be ignored.
@@ -391,6 +412,7 @@ def blogger_getUsersBlogs(user, appkey):
             string xmlrpc: URL endpoint to use for XML-RPC requests on this blog.
     """
     logger.debug( "blogger.getUsersBlogs called")
+    user = get_user(username, password)
     # print "Got user", user
     usersblogs = Blog.objects.filter(owner=user)
     logger.debug( "%s blogs for %s" % (usersblogs, user))
@@ -448,18 +470,19 @@ def blogger_deletePost(user, appkey, post_id, publish):
 
     return True
 # @public
-@authenticated()
-def mt_getCategoryList(user, blogid):
+def mt_getCategoryList(blogid, username, password):
     """ takes the blogid, and returns a list of categories"""
     logger.debug( "mt_getCategoryList called")
-    # categories = Category.objects.all()
+    
     logger.warn("Categories no longer supported")
+    user = get_user(username, password)
+    categories = Category.objects.filter(blog__owner=user.id)
     res=[]
-    # for c in categories:
-    #     struct={}
-    #     struct['categoryId']= str(c.id)
-    #     struct['categoryName']= c.title
-    #     res.append(struct)
+    for c in categories:
+         struct={}
+         struct['categoryId']= str(c.id)
+         struct['categoryName']= c.title
+         res.append(struct)
     return res
     
 def post_struct(post):
@@ -467,8 +490,8 @@ def post_struct(post):
     logger.debug("post_struct called")
     # link = full_url(post.get_absolute_url())
     link = post.get_absolute_url()
-    # categories = post.categories.all()
-    categories = []
+    categories = [c.title for c in post.categories.all()]
+    # categories = []
     # check to see if there's a more tag...
     if post.body.find('<!--more-->') > -1:
       description, mt_text_more = post.body.split('<!--more-->')
@@ -495,11 +518,14 @@ def post_struct(post):
     
     if post.pub_date:
             struct['dateCreated'] = format_date(post.pub_date)
+    logger.debug("Returning from post_struct")
+    logger.debug(struct)
     return struct
     
 def format_date(d):
     logger.debug( "format_date called...")
-    if not d: return None
+    logger.debug("date passed: %s" % str(d))
+    # if not d: return None
     #print 80*"x",fd    
     # return xmlrpclib.DateTime(d.isoformat())
     return xmlrpclib.DateTime(d.isoformat())
@@ -540,35 +566,42 @@ def mt_supportedMethods(*args):
     return res
 
 # @public
-@authenticated()
-def mt_getPostCategories(user, postid):
+def mt_getPostCategories(postid, username, password):
     """
     returns a list of categories for postid *postid*
     """
     logger.debug( "mt_getPostCategories called...")
     logger.warn("Categories no longer supported")
+    user = get_user(username, password)
+    if not is_user_blog(user, blogid):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    if post.author.user != user:
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
+    
+
+    
     res = []
-    # try:
-    #     p = Post.objects.get(pk=postid)
-    #     # print "Processing", p.categories.all()
-    #     counter = 0
-    #     res = []
-    # 
-    #     
-    #     for c in p.categories.all():
-    #         # print "Got post category:", c
-    #         primary = False
-    #         if p.primary_category_name == c:
-    #             # print "%s is the primary category" % c
-    #             primary=True
-    #         res.append(
-    #             dict(categoryName=c.title, categoryId=str(c.id), isPrimary=primary)
-    #         )
-    # except:
-    #     import traceback
-    #     traceback.print_exc(sys.stderr)
-    #     res = None
-    # 
+    try:
+         p = Post.objects.get(pk=postid)
+         # print "Processing", p.categories.all()
+         counter = 0
+         res = []
+     
+         
+         for c in p.categories.all():
+             # print "Got post category:", c
+             primary = False
+             if p.primary_category_name == c:
+                 # print "%s is the primary category" % c
+                 primary=True
+             res.append(
+                 dict(categoryName=c.title, categoryId=str(c.id), isPrimary=primary)
+             )
+    except:
+         import traceback
+         traceback.print_exc(sys.stderr)
+         res = None
+     
     return res
 
 # @public
