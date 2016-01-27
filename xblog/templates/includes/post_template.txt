@@ -31,7 +31,8 @@
 <div class="panel panel-default">
     {% comment %}<div class="panel-heading"><h3 class="panel-title"><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></h3></div>{% endcomment %}
     <div class="panel-body">{{ object.get_full_body|safe}}</div>
-    <div class="panel-footer">{% if object.author.avatar %}<img src="{{ object.author.avatar.url }}">{% endif %} Posted by <a href="{% url "author-detail" username=object.author.user.username %}/">{{ object.author.fullname }}</a> at {{ object.pub_date|date:"P"}} on {{ object.pub_date|date:"N dS, Y"}}</div>
+    <div class="panel-footer">{% if object.author.avatar %}<img src="{{ object.author.avatar.url }}">{% endif %} Posted by <a href="{% url "author-detail" username=object.author.user.username %}">{{ object.author.fullname }}</a> at {{ object.pub_date|date:"P"}} on {{ object.pub_date|date:"N dS, Y"}}{% if request.user == object.author.user %}
+        <a href="{% url "post-edit"   year=object.pub_date|date:"Y" month=object.pub_date|date:"b" day=object.pub_date|date:"d" slug=object.slug %}">{% bootstrap_icon "edit" %}</a><a href="{% url "post-delete"   year=object.pub_date|date:"Y" month=object.pub_date|date:"b" day=object.pub_date|date:"d" slug=object.slug %}">{% bootstrap_icon "trash" %}</a>{% endif %}</div>
 </div>
 {% comment %}
 <div class="container">

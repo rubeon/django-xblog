@@ -30,6 +30,11 @@ from .views.blog import PostDayArchiveView
 from .views.blog import PostArchiveIndexView
 from .views.blog import PostDateDetailView
 
+from .views.post import PostCreateView
+from .views.post import PostUpdateView
+from .views.post import PostDeleteView
+
+
 year_archive_pattern =r'^(?P<year>[0-9]{4})/$'
 month_archive_pattern=r'^(?P<year>\d{4})/(?P<month>\w{3})/$'
 day_archive_pattern  =r'^(?P<year>\d{4})/(?P<month>\w{3})/(?P<day>\d{1,2})/$'
@@ -37,6 +42,7 @@ day_archive_pattern  =r'^(?P<year>\d{4})/(?P<month>\w{3})/(?P<day>\d{1,2})/$'
 date_detail_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/$'
 
 post_edit_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/edit/$'
+post_delete_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/delete/$'
 post_stats_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/stats/$'
 post_preview_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/preview/$'
 post_set_publish_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/set_publish/$'
@@ -50,17 +56,14 @@ author_detail_pattern = r'^author_detail/(?P<username>\w+)/$'
 
 PAGE_LENGTH=30
 
-urlpatterns = patterns('',
-    # remove xmlrpc view; use django_xmlprc instead
-    # url(r'^xmlrpc/*','xblog.views.xmlrpc_views.call_xmlrpc', {'module':'xblog.metaWeblog'}),
-#     url(r'^authors/$', AuthorListView.as_view(), 
-#        name="author-list"),
+urlpatterns = [
+    url(year_archive_pattern, PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH), name="year-archive"),
+    url(month_archive_pattern, PostMonthArchiveView.as_view(paginate_by=5), name="month-archive"),
     url(year_archive_pattern, PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH), name="year-archive"),
     url(month_archive_pattern, PostMonthArchiveView.as_view(paginate_by=5), name="month-archive"),
     url(day_archive_pattern, PostDayArchiveView.as_view(paginate_by=PAGE_LENGTH), name="day-archive"),
     url(date_detail_pattern, PostDateDetailView.as_view(),name='post-detail'),
-    url(post_edit_pattern, 'xblog.views.edit.edit_post',
-        name="post-edit" ),
+
     url(post_stats_pattern, 'xblog.views.edit.stats',
         name="post-stats"), 
     url(post_preview_pattern, 'xblog.views.edit.preview_post', 
@@ -68,8 +71,10 @@ urlpatterns = patterns('',
     url(post_set_publish_pattern, 'xblog.views.edit.set_publish', 
         name="post-set-publish"),
 
-    url(r'add_post/$', 'xblog.views.edit.add_post', 
-        name='post-add'),
+    url(r'add_post/$', PostCreateView.as_view(), name='post-add'),
+    url(post_edit_pattern, PostUpdateView.as_view(), name="post-edit" ),
+    url(post_delete_pattern, PostDeleteView.as_view(), name="post-delete" ),
+
     url(r'add_blog/$', BlogCreateView.as_view(), name='blog-add'),
     url(blog_detail_pattern, BlogDetailView.as_view(), name='blog-detail'),
     url(blog_update_pattern, BlogUpdateView.as_view(), name='blog-update'),
@@ -96,4 +101,6 @@ urlpatterns = patterns('',
         queryset=Post.objects.filter(status="publish")),
         name='site-overview',
         ),
-)
+    
+]
+

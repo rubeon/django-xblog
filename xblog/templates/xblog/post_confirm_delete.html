@@ -1,0 +1,18 @@
+{% extends "xblog/blog_base.html" %}
+{% load bootstrap3 %}
+{% block maincontent %}
+<form action="" method="post" accept-charset="utf-8">
+	{% csrf_token %}
+    {% buttons %}
+    <div class="alert alert-danger">
+      <strong>Danger!</strong> This post will be permanently deleted!
+    </div>
+    {% include "includes/post_template.txt" %}
+        <button type="submit" class="btn btn-primary">
+            {% bootstrap_icon "star" %} Delete
+        </button>
+    {% endbuttons %}
+
+</form>
+{% endblock %}
+

@@ -1,0 +1,9 @@
+{% extends "xblog/blog_base.html" %}
+{% load bootstrap3 %}
+
+{% block maincontent %}
+
+<h1>{{ object.title }}</h1>
+<p>{% if object.owner.author.avatar %}<img src="{{ object.owner.author.avatar.url }}" height=50 width=50>{% endif %}{{ object.owner.author.fullname }}</p>
+{{ object.posts.count }} posts.
+{% endblock %}
