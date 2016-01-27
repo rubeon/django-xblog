@@ -47,6 +47,7 @@ vi mysite/settings
         'django.contrib.staticfiles',
         # following are for xblog
         'django.contrib.sites',
+        'bootstrap3',
         'markdown_deux',
         'xblog',
     ]
@@ -74,5 +75,7 @@ Add a place to your site's root `urls.py` reach your blog:
 XBlog uses the Django authentication framework to keep track of users.  Users are linked to Authors, which can serve as the User profile model.
 
 ```bash
+
+
 
 ````
