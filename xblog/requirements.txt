@@ -1,6 +1,10 @@
-Django==1.8.8
-html2text==
+Django
+html2text
 BeautifulSoup
 django-markdown-deux
 Pillow
 pytz
+textstat
+pygments
+markdown2
+django-bootstrap3

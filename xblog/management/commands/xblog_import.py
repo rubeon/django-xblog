@@ -15,7 +15,15 @@ map an author to the logged-in guy
 
 from django.core.management.base import BaseCommand, CommandError
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.models import User
+from django.conf import settings
+try:
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    print 20*'x'
+    print User
+except ImportError:
+    from django.contrib.auth.models import User 
+
 
 from optparse import make_option
 from xblog.models import Blog, Post, Author

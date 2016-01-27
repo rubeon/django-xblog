@@ -9,6 +9,7 @@
 	<!-- begin main blog overview -->
     <h1>Hi o/</h1>
 	{% for object in object_list %}
+    {{ object.pub_date|date "j F, Y" }}
     {% include "includes/post_template.txt" %}
 	{% endfor %}
 	<!-- end main blog overview -->

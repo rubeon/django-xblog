@@ -11,7 +11,17 @@ sys.path.insert(0,os.path.join(SITE_DIR,'..','..'))
 # os.chdir('..')
 #print sys.path
 from django.template.defaultfilters import slugify
-from django.contrib.auth.models import User
+try:
+    from django.contrib.auth import get_user_model
+    User = settings.AUTH_USER_MODEL
+except ImportError:
+    from django.contrib.auth.models import User 
+
+try:
+    from django.contrib.auth import get_user_model
+    User = settings.AUTH_USER_MODEL
+except ImportError:
+    from django.contrib.auth.models import User 
 import datetime
 import shutil
 import settings

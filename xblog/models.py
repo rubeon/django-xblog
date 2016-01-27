@@ -1,6 +1,6 @@
 from django.db import models
 from django.template.defaultfilters import slugify
-from django.contrib.auth.models import User 
+# from django.contrib.auth.models import User 
 from django.core.mail import mail_managers, send_mail
 from django.core.validators import MinLengthValidator
 # from django.utils.text import truncate_html_words
@@ -15,6 +15,12 @@ from django.forms import ModelForm
 
 from django.db.models.signals import post_save
 
+try:
+    from django.contrib.auth import get_user_model
+    User = settings.AUTH_USER_MODEL
+except ImportError:
+    from django.contrib.auth.models import User 
+
 def create_profile(sender, **kwargs):
     user = kwargs["instance"]
     if kwargs["created"]:
@@ -25,8 +31,8 @@ def create_profile(sender, **kwargs):
             up = Author(user=user)
             up.save()
 
+# weird.
 post_save.connect(create_profile, sender=User)
-
 
 from external import fuzzyclock
 from external import text_stats
@@ -234,8 +240,15 @@ class Author(models.Model):
             if self.remote_access_enabled:
                 if not self.remote_access_key:
                     self.remote_access_key=random_string()
-
+        # check if a name was give
+        
         super(self.__class__, self).save()
+        
+    def __unicode__(self):
+        if self.fullname == '':
+            return str(self.user)
+        else:
+            return self.fullname
         
 class Category(models.Model):
     """
@@ -513,6 +526,9 @@ class Blog(models.Model):
         # return reverse("archive-index")
         # return "http://127.0.0.1:8000/blog/"
         return "http://%s/" % self.site.domain
+        
+    def get_absolute_url(self):
+        return reverse('blog-detail', kwargs={'pk': self.pk})
         
 class PostForm(ModelForm):
     """

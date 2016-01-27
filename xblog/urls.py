@@ -16,7 +16,14 @@ from django.contrib.sites.models import Site
 from django.contrib.sitemaps import GenericSitemap
 
 from .models import Post
+from .views.blog import AuthorCreateView
 from .views.blog import AuthorListView
+from .views.blog import AuthorDetailView
+
+from .views.blog import BlogCreateView
+from .views.blog import BlogDetailView
+from .views.blog import BlogUpdateView
+
 from .views.blog import PostYearArchiveView
 from .views.blog import PostMonthArchiveView
 from .views.blog import PostDayArchiveView
@@ -28,11 +35,18 @@ month_archive_pattern=r'^(?P<year>\d{4})/(?P<month>\w{3})/$'
 day_archive_pattern  =r'^(?P<year>\d{4})/(?P<month>\w{3})/(?P<day>\d{1,2})/$'
 # date_detail_pattern=r'^(?P<year>\d{4})/(?P<month>\w{3})/(?P<day>\d{2})/(?P<slug>[-\w]+)/$'
 date_detail_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/$'
+
 post_edit_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/edit/$'
 post_stats_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/stats/$'
 post_preview_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/preview/$'
 post_set_publish_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})/(?P<slug>[-\w]+)/set_publish/$'
+
 template_preview_pattern=r'^template_preview/(?P<template_file>[-/\w]+)$'
+
+blog_detail_pattern = r'^blog_details/(?P<pk>\d)/$'
+blog_update_pattern = r'^blog_update/(?P<pk>\d)/edit/$'
+
+author_detail_pattern = r'^author_detail/(?P<username>\w+)/$'
 
 PAGE_LENGTH=30
 
@@ -53,14 +67,24 @@ urlpatterns = patterns('',
         name="post-preview"),
     url(post_set_publish_pattern, 'xblog.views.edit.set_publish', 
         name="post-set-publish"),
+
     url(r'add_post/$', 'xblog.views.edit.add_post', 
         name='post-add'),
-    url(template_preview_pattern, 'xblog.views.blog.template_preview', 
-        name='template-preview'),
+    url(r'add_blog/$', BlogCreateView.as_view(), name='blog-add'),
+    url(blog_detail_pattern, BlogDetailView.as_view(), name='blog-detail'),
+    url(blog_update_pattern, BlogUpdateView.as_view(), name='blog-update'),
+
+    url(r'add_author/$', AuthorCreateView.as_view(), name='author-add'),
+    url(author_detail_pattern, AuthorDetailView.as_view(), name='author-detail'),
+        
     url(r'content_list/$', 'xblog.views.edit.content_list', 
         name='content-list'),
     url(r'export_opml/$', 'xblog.views.blog.export_opml',
         name='export-opml'),
+        
+    url(template_preview_pattern, 'xblog.views.blog.template_preview', 
+        name='template-preview'),
+    
     # url(r'^$', ArchiveIndexView.as_view(model=Post, date_field="pub_date", 
     #     paginate_by=PAGE_LENGTH, 
     #     queryset=Post.objects.all().filter(status="publish").select_related('author')), 
@@ -70,5 +94,6 @@ urlpatterns = patterns('',
         date_field="pub_date",
         paginate_by=PAGE_LENGTH,
         queryset=Post.objects.filter(status="publish")),
-        name='site-overview'),
+        name='site-overview',
+        ),
 )

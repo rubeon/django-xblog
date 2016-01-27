@@ -1,6 +1,6 @@
 {% load static %}
 {% load bootstrap3 %}
-            {% comment %}<h3 class="blog-post-title"><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></h3>
+{% comment %}<h3 class="blog-post-title"><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></h3>
             <p class="blog-post-meta">Posted by {{ object.author.fullname }} at {{ object.pub_date|date:"P"}} 
                 on {{ object.pub_date|date:"N dS, Y"}}
             </p>
@@ -13,7 +13,7 @@
 
             {% ifeq request.user object.author %}{% bootstrap_icon edit %}{% endif %}
             </div>
-            {% endcomment %}
+{% endcomment %}
 
 {% comment %}
 <div class="row">
@@ -31,7 +31,7 @@
 <div class="panel panel-default">
     {% comment %}<div class="panel-heading"><h3 class="panel-title"><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></h3></div>{% endcomment %}
     <div class="panel-body">{{ object.get_full_body|safe}}</div>
-    <div class="panel-footer">{% if object.author.avatar %}<img src="{{object.author.avatar.url }}">{% endif %} Posted by {{ object.author.fullname }} at {{ object.pub_date|date:"P"}} on {{ object.pub_date|date:"N dS, Y"}}</div>
+    <div class="panel-footer">{% if object.author.avatar %}<img src="{{ object.author.avatar.url }}">{% endif %} Posted by <a href="{% url "author-detail" username=object.author.user.username %}/">{{ object.author.fullname }}</a> at {{ object.pub_date|date:"P"}} on {{ object.pub_date|date:"N dS, Y"}}</div>
 </div>
 {% comment %}
 <div class="container">

@@ -14,7 +14,13 @@ import datetime
 import os
 import urlparse
 import sys
-from django.contrib.auth.models import User
+from django.conf import settings
+try:
+    from django.contrib.auth import get_user_model
+    User = settings.AUTH_USER_MODEL
+except ImportError:
+    from django.contrib.auth.models import User 
+
 import django
 # from django.contrib.comments.models import FreeComment
 from django.conf import settings

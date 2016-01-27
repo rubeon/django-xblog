@@ -19,7 +19,12 @@ sys.path.insert(0,os.path.join(SITE_DIR,'..','..'))
 # print sys.path
 from xblog.models import Post, Category, Blog, Author, Tag, Link, LinkCategory, Pingback
 from django.conf import settings
-from django.contrib.auth.models import User 
+try:
+    from django.contrib.auth import get_user_model
+    User = settings.AUTH_USER_MODEL
+except ImportError:
+    from django.contrib.auth.models import User 
+
 from django.contrib.contenttypes.models import ContentType
 from xcomments.models import FreeComment
 from django.contrib.sites.models import Site

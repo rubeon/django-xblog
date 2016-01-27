@@ -16,7 +16,13 @@ sys.path.insert(0,os.path.join(SITE_DIR,'..'))
 sys.path.insert(0,os.path.join(SITE_DIR,'..','..'))
 
 import urlparse
-from django.contrib.auth.models import User
+from django.conf import settings
+try:
+    from django.contrib.auth import get_user_model
+    User = settings.AUTH_USER_MODEL
+except ImportError:
+    from django.contrib.auth.models import User 
+
 from xblog.models import Tag, Post, Blog, Author, Category
 from xmlrpc_views import public
 import xmlrpclib

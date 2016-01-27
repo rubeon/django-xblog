@@ -1,5 +1,10 @@
 from django.contrib import admin
-from django.contrib.auth.models import User
+from django.conf import settings
+try:
+    from django.contrib.auth import get_user_model
+    User = settings.AUTH_USER_MODEL
+except ImportError:
+    from django.contrib.auth.models import User 
 
 from xblog.models import LinkCategory, Link, Pingback, Tag, Author, Post, Blog, Category
 from xblog.models import STATUS_CHOICES, FILTER_CHOICES
@@ -26,16 +31,11 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ('title',)
 admin.site.register(Tag, TagAdmin)
 
-class AuthorInline(admin.StackedInline):
+class AuthorAdmin(admin.ModelAdmin):
     model = Author
-    can_delete = False
-
-class AuthorAdmin(BaseUserAdmin):
-    inlines = (AuthorInline,)
-  
-  
-admin.site.unregister(User)  
-admin.site.register(User, AuthorAdmin)
+    search_fields = ('fullname', 'user')
+    list_display = ('user', 'fullname')
+admin.site.register(Author, AuthorAdmin)
 
 # admin.site.register(Author, AuthorAdmin)
 

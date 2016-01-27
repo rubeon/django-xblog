@@ -8,7 +8,8 @@ Created by Eric Williams on 2007-02-21.
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
 from django.template import RequestContext, Context, loader
-from django.views.generic.list import ListView
+from django.shortcuts import get_object_or_404
+
 # from xcomments.models import FreeComment
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from xblog.models import Post, Blog, Author
@@ -17,6 +18,14 @@ from django.views.generic.dates import MonthArchiveView
 from django.views.generic.dates import DayArchiveView
 from django.views.generic.dates import ArchiveIndexView
 from django.views.generic.dates import DateDetailView
+
+from django.views.generic.list import ListView
+
+from django.views.generic.edit import CreateView
+from django.views.generic.edit import UpdateView
+from django.views.generic.edit import DeleteView
+
+from django.views.generic.detail import DetailView
 
 from xml.etree import ElementTree
 from xml.dom import minidom
@@ -45,6 +54,12 @@ class AuthorListView(ListView):
     
     model = Author
 
+def empty(request, **kwargs):
+    print "%s.empty entered" % __name__
+    logger.debug("%s.empty entered" % __name__)
+    t = loader.get_template("xblog/first_page")
+    return HttpResponse({}, request)
+
 def template_preview(request, **kwargs):
     """
     just let's me preview a template in context...
@@ -58,9 +73,15 @@ def template_preview(request, **kwargs):
             context = RequestContext(request, c)
             t = loader.get_template("xblog/%s.html" % tmpl )
             logger.info("Got %s" % t)
-            return HttpResponse(t.render(context))
+            html = t.render(c, request)
+            return HttpResponse(html)
         except Exception, e:
-            logger.warn(e)
+            import sys, traceback
+            print "Exception in user code:"
+            print '-'*60
+            traceback.print_exc(file=sys.stdout)
+            print '-'*60
+            logger.warn(e.message)
             return HttpResponse(str(e))
     else:
         return HttpResponse("Please specify template filename")
@@ -210,6 +231,46 @@ def export_opml(request):
 #             response.write(t.render(c))
 #             return response
 
+class AuthorCreateView(CreateView):
+    model = Author
+    fields = ['fullname', 'url', 'avatar']
+    
+class AuthorUpdateView(UpdateView):
+    model = Author
+    fields = ['fullname','url','avatar']
+    
+class AuthorDetailView(DetailView):
+    model = Author
+    
+    def get_object(self, ):
+        res = get_object_or_404(Author, user__username=self.kwargs.get('username'))
+        return res
+
+class BlogCreateView(CreateView):
+    model = Blog
+    fields = ['title', 'description']
+    
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        form.instance.site = Site.objects.get_current()
+        return super(BlogCreateView, self).form_valid(form)
+
+class BlogDetailView(DetailView):
+    model = Blog
+    fields=['title','description', 'owner']
+    
+class BlogUpdateView(UpdateView):
+    model = Blog
+    fields=['title', 'description']
+    # success_url = "../blog_details/"
+    
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        form.instance.site = Site.objects.get_current()
+        return super(BlogUpdateView, self).form_valid(form)
+
+
+
 class PostYearArchiveView(YearArchiveView):
     queryset = Post.objects.filter(status="publish")
     date_field = "pub_date"
@@ -230,7 +291,7 @@ class PostYearArchiveView(YearArchiveView):
         
     def get_queryset(self):
         print "get_queryset entererd..."
-        if hasattr(self, 'year'):
+        if hasattr(self, 'owner'):
             print "i has owner"
             queryset = Post.objects.filter(author=self.owner)
         else:
@@ -280,6 +341,7 @@ class PostArchiveIndexView(ArchiveIndexView):
     allow_future = True
     logger.debug(queryset)
     Model = Post
+    allow_empty = True
     
     def get_context_data(self, **kwargs):
         """
@@ -306,3 +368,5 @@ class PostDateDetailView(DateDetailView):
         context = super(PostDateDetailView, self).get_context_data(**kwargs)
         context['site'] = Site.objects.get_current()
         return context
+        
+

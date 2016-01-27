@@ -1,15 +1,14 @@
 from django.forms import ModelForm, CharField
-from models import Author, Blog
+from .models import Author
+from .models import Post
 
-class EditAuthorForm(ModelForm):
-
+class PostCreateForm(ModelForm):
+    
     class Meta:
-        model = Author
-        exclude = ('user',)
+        model = Post
+        fields = ['title', 'body','status', 'tags', 'text_filter', 'blog']
         
-class EditBlogForm(ModelForm):
-
-    class Meta:
-        model = Blog
-        exclude = ('owner',)
+        def __init__(self, *args, **kwargs):
+            super(WorklogCreateForm, self).__init__(self, *args, **kwargs)
+            self.fields['project'].queryset = Post.objects.filter(Project.status == 2)
         

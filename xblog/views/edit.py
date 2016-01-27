@@ -13,7 +13,13 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils import timezone
 from django.contrib import messages
 from django.forms.models import inlineformset_factory
-from django.contrib.auth.models import User 
+from django.conf import settings
+try:
+    from django.contrib.auth import get_user_model
+    User = settings.AUTH_USER_MODEL
+except ImportError:
+    from django.contrib.auth.models import User 
+
 
 # from xcomments.models import FreeComment
 from django import forms 

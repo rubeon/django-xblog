@@ -1,7 +1,12 @@
 from setuptools import setup
 from setuptools import find_packages
+from pip.req import parse_requirements
 
 import xblog
+
+REQUIREMENTS_FILE = "xblog/requirements.txt"
+
+requirements = [str(ir.req) for ir in parse_requirements(REQUIREMENTS_FILE)]
 
 setup(
     name='django-xblog',
@@ -25,15 +30,5 @@ setup(
     license=xblog.__license__,
     include_package_data=True,
     zip_safe=False,
-    install_requires=[
-        'Django==1.8.8',
-        'html2text',
-        'BeautifulSoup',
-        'django-markdown-deux',
-        'Pillow',
-        'pytz'
-    ]
-    
-    
-    
+    install_requires=requirements,
 )
