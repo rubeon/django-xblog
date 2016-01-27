@@ -1,12 +1,12 @@
 from setuptools import setup
 from setuptools import find_packages
 from pip.req import parse_requirements
-
+import pip
 import xblog
 
 REQUIREMENTS_FILE = "xblog/requirements.txt"
 
-requirements = [str(ir.req) for ir in parse_requirements(REQUIREMENTS_FILE)]
+requirements = [str(ir.req) for ir in parse_requirements(REQUIREMENTS_FILE,  session=pip.download.PipSession())]
 
 setup(
     name='django-xblog',
