@@ -3,7 +3,18 @@ Blogging application for your Django site
 
 ## Installation
 
+From github: 
+
 ```bash
+
+    pip install https://github.com/rubeon/django-xblog/archive/master.zip
+
+```
+
+Using git:
+
+```bash
+
     mkdir blog_project
     cd blog_project
     virtualenv .
@@ -11,6 +22,7 @@ Blogging application for your Django site
     git clone git@github.com:rubeon/django-xblog.git
     cd django-xblog
     python setup install
+
 ```
 
 
@@ -20,9 +32,13 @@ This will install xblog and its requirements.
 
 After the above, go through the usual process:
 
+```bash
+
 django-admin startproject mysite
 cd mysite
 vi mysite/settings
+
+```
 
 ```python
 
@@ -52,3 +68,11 @@ Add a place to your site's root `urls.py` reach your blog:
         url(r'^blog/', xblog.urls),
     ]
 ```
+
+## Creating users
+
+XBlog uses the Django authentication framework to keep track of users.  Users are linked to Authors, which can serve as the User profile model.
+
+```bash
+
+````
