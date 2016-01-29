@@ -24,6 +24,8 @@
 #     ('xblog.metaWeblog.wp_getOptions', 'wp.getOptions'),
 #     ('xblog.metaWeblog.wp_getTags', 'wp.getTags'),
 #     ('xblog.metaWeblog.wp_newPost', 'wp.newPost'),
+#     ('xblog.metaWeblog.wp_getCategories', 'wp.getCategories'),
 # )
 # 
-# 
+
+ 

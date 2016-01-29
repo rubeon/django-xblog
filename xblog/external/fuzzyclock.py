@@ -37,36 +37,36 @@ class FuzzyClock:
         self.__minute = 0
         self.__dayOfWeek = 0
 
-        self.__hourNames = [ _('one'), _('two'), _('three'), _('four'), _('five'), _('six'),
-                             _('seven'), _('eight'), _('nine'), _('ten'), _('eleven'),
-                             _('twelve')]
+        self.__hourNames = [ 'one', 'two', 'three', 'four', 'five', 'six',
+                             'seven', 'eight', 'nine', 'ten', 'eleven',
+                             'twelve']
 
         """ Strings to use for the output. %0 will be replaced with the preceding
             hour (e.g. "x PAST %0"), %1 with the coming hour (e.g. "x TO %1). """
-        self.__normalFuzzy = [ _('%0 o\'clock'), _('five past %0'), _('ten past %0'),
-                               _('quarter past %0'), _('twenty past %0'),
-                               _('twenty five past %0'), _('half past %0'),
-                               _('twenty five to %1'), _('twenty to %1'),
-                               _('quarter to %1'), _('ten to %1'), _('five to %1'),
-                               _('%1 o\'clock') ]
+        self.__normalFuzzy = [ '%0 o\'clock', 'five past %0', 'ten past %0',
+                               'quarter past %0', 'twenty past %0',
+                               'twenty five past %0', 'half past %0',
+                               'twenty five to %1', 'twenty to %1',
+                               'quarter to %1', 'ten to %1', 'five to %1',
+                               '%1 o\'clock' ]
 
         """ A "singular-form". It is used when talking about hour 0 - I don't
             understand this, i just ported it ;-) Maybe some languages need
             this (not English and German though)? If you know, please drop me
             a note :-)
         """
-        self.__normalFuzzyOne = [ _('%0 o\'clock'), _('five past %0'),
-                                  _('ten past %0'), _('quarter past %0'),
-                                  _('twenty past %0'), _('twenty five past %0'),
-                                  _('half past %0'), _('twenty five to %1'),
-                                  _('twenty to %1'), _('quarter to %1'),
-                                  _('ten to %1'), _('five to %1'), _('%1 o\'clock') ]
+        self.__normalFuzzyOne = [ '%0 o\'clock', 'five past %0',
+                                  'ten past %0', 'quarter past %0',
+                                  'twenty past %0', 'twenty five past %0',
+                                  'half past %0', 'twenty five to %1',
+                                  'twenty to %1', 'quarter to %1',
+                                  'ten to %1', 'five to %1', '%1 o\'clock' ]
 
-        self.__dayTime = [ _('Night'), _('Early morning'), _('Morning'), _('Almost noon'),
-                           _('Noon'), _('Afternoon'), _('Evening'), _('Late evening') ]
+        self.__dayTime = [ 'Night', 'Early morning', 'Morning', 'Almost noon',
+                           'Noon', 'Afternoon', 'Evening', 'Late evening' ]
 
-        self.__fuzzyWeek = [ _('Start of week'), _('Middle of week'), _('End of week'),
-                             _('Weekend!') ]
+        self.__fuzzyWeek = [ 'Start of week', 'Middle of week', 'End of week',
+                             'Weekend!' ]
 
         self.setCurrent()
 

@@ -31,6 +31,8 @@ from .views.blog import PostMonthArchiveView
 from .views.blog import PostDayArchiveView
 from .views.blog import PostArchiveIndexView
 from .views.blog import PostDateDetailView
+from .views.blog import CategoryDetailView
+
 
 from .views.post import PostCreateView
 from .views.post import PostUpdateView
@@ -53,10 +55,13 @@ post_set_publish_pattern=r'^(?P<year>\d{4})/(?P<month>[a-z]{3})/(?P<day>\w{1,2})
 
 template_preview_pattern=r'^template_preview/(?P<template_file>[-/\w]+)$'
 
-blog_detail_pattern = r'^blog_details/(?P<pk>\d)/$'
-blog_update_pattern = r'^blog_update/(?P<pk>\d)/edit/$'
+blog_detail_pattern = r'^space/(?P<slug>[-\w]+)/$'
+blog_update_pattern = r'^space/(?P<slug>[-\w]+)/edit/$'
 
-author_detail_pattern = r'^author_detail/(?P<username>\w+)/$'
+category_detail_pattern = r'^space/(?P<blog_slug>[-\w]+)/(?P<cat_slug>[-\w]+)/$'
+category_update_pattern = r'^space/(?P<blog_slug>[-\w]+)/(?P<cat_slug>[-\w]+)/$'
+
+author_detail_pattern = r'^author/(?P<username>\w+)/$'
 
 PAGE_LENGTH=30
 
@@ -82,6 +87,7 @@ urlpatterns = [
     url(r'add_blog/$', login_required(BlogCreateView.as_view()), name='blog-add'),
     url(blog_update_pattern, login_required(BlogUpdateView.as_view()), name='blog-update'),
     url(blog_detail_pattern, BlogDetailView.as_view(), name='blog-detail'),
+    url(category_detail_pattern, CategoryDetailView.as_view(paginate_by=PAGE_LENGTH), name='blog-detail'),
 
     url(r'add_author/$', staff_member_required(AuthorCreateView.as_view()), name='author-add'),
     url(author_detail_pattern, AuthorDetailView.as_view(), name='author-detail'),

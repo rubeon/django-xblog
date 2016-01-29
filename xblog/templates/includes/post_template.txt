@@ -1,78 +1,27 @@
 {% load static %}
 {% load bootstrap3 %}
-{% comment %}<h3 class="blog-post-title"><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></h3>
-            <p class="blog-post-meta">Posted by {{ object.author.fullname }} at {{ object.pub_date|date:"P"}} 
-                on {{ object.pub_date|date:"N dS, Y"}}
-            </p>
+
+    
+
+
+    <h1 class="post-title">
+      <a href="{{ object.get_absolute_url }}">
+        {{ object.title }}
+      </a>
+    </h1>
+
+<article>
+    <footer class="post-meta">
+    		<span class="posted-on"><i class="fa fa-calendar"></i>
+                <a href="{{ object.get_absolute_url }}" rel="bookmark"><time class="entry-date published" datetime="{{ object.pub_date }}">{{ object.pub_date|date:"j F, Y"}}</time></a></span>
+                <span class="byline"> <i class="fa fa-user"></i> <span class="author vcard"><a class="url fn n" href="{% url "author-detail" username=object.author.user.username %}">{{ object.author.fullname }}</a></span></span>
+                <span class="comments-link"><i class="fa fa-comment-o"></i><a href="https://colorlib.com/sparkling/template-pingbacks-an-trackbacks/#comments">Comments</a></span>
+                {% for category in object.categories.all %}<span class="pull-right badge"><a href="{{ category.get_absolute_url }}">{{ category.title }}</a></span>{% endfor %}
+            </span>
             
-            <div class="container">
-                <div class="row">
-                    <div class=".col-md-8">{{ object.get_full_body|safe }}</div>
-                    <div class=".col-md-4">{% if object.author.avatar %}<img src="{{object.author.avatar.url }}">{% endif %}</div>
-                </div>
+    </footer>
+    
+      {{ object.get_full_body|safe }}      
+</article>
+        
 
-            {% ifeq request.user object.author %}{% bootstrap_icon edit %}{% endif %}
-            </div>
-{% endcomment %}
-
-{% comment %}
-<div class="row">
-  <div class="col-md-8"><h4 class="blog-post-title"><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></h3></div>
-</div>
-<div class="row">
-<div class="col-md-8 blog-post-meta">Posted by {{ object.author.fullname }} at {{ object.pub_date|date:"P"}}</div>
-</div>
-<div class="row">
-  <div class="col-md-6">{{ object.get_full_body|safe}}</div>
-  <div class="col-md-2">{% if object.author.avatar %}<img src="{{object.author.avatar.url }}">{% endif %}</div>
-</div>
-{% endcomment %}
-<h3><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></h3>
-<div class="panel panel-default">
-    {% comment %}<div class="panel-heading"><h3 class="panel-title"><a href="{{ object.get_absolute_url }}">{{ object.title }}</a></h3></div>{% endcomment %}
-    <div class="panel-body">{{ object.get_full_body|safe}}</div>
-    <div class="panel-footer">{% if object.author.avatar %}<img src="{{ object.author.avatar.url }}">{% endif %} Posted by <a href="{% url "author-detail" username=object.author.user.username %}">{{ object.author.fullname }}</a> at {{ object.pub_date|date:"P"}} on {{ object.pub_date|date:"N dS, Y"}}{% if request.user == object.author.user %}
-        <a href="{% url "post-edit"   year=object.pub_date|date:"Y" month=object.pub_date|date:"b" day=object.pub_date|date:"d" slug=object.slug %}">{% bootstrap_icon "edit" %}</a><a href="{% url "post-delete"   year=object.pub_date|date:"Y" month=object.pub_date|date:"b" day=object.pub_date|date:"d" slug=object.slug %}">{% bootstrap_icon "trash" %}</a>{% endif %}</div>
-</div>
-{% comment %}
-<div class="container">
-    <div class="row">
-        <div class="col-xs-12 col-sm-6 col-md-6">
-            <div class="well well-sm">
-                <div class="row">
-                    <div class="col-sm-6 col-md-4">
-                        <img src="http://placehold.it/380x500" alt="" class="img-rounded img-responsive" />
-                    </div>
-                    <div class="col-sm-6 col-md-8">
-                        <h3>{{ object.title }}</h3>
-                        <small><cite title=""> <i class="glyphicon glyphicon-map-marker">
-                        </i></cite></small>
-                        <p>
-                            <i class="glyphicon glyphicon-envelope"></i>email@example.com
-                            <br />
-                            <i class="glyphicon glyphicon-globe"></i><a href="http://www.jquery2dotnet.com">www.jquery2dotnet.com</a>
-                            <br />
-                            <i class="glyphicon glyphicon-gift"></i>June 02, 1988</p>
-                        <!-- Split button -->
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-primary">
-                                Social</button>
-                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-                                <span class="caret"></span><span class="sr-only">Social</span>
-                            </button>
-                            <ul class="dropdown-menu" role="menu">
-                                <li><a href="#">Twitter</a></li>
-                                <li><a href="https://plus.google.com/+Jquery2dotnet/posts">Google +</a></li>
-                                <li><a href="https://www.facebook.com/jquery2dotnet">Facebook</a></li>
-                                <li class="divider"></li>
-                                <li><a href="#">Github</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% endcomment %}    

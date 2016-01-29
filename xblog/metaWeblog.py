@@ -66,7 +66,6 @@ def authenticated(pos=1):
             args = args[0:pos]+args[pos+2:]
             try:
                 logger.info("Username: %s" % username)
-                # print "Password: ", password
                 user = User.objects.get(username__exact=username)
             except User.DoesNotExist:
                 logger.debug("username %s, password %s, args %s" % (username, "password", args))
@@ -355,33 +354,40 @@ def metaWeblog_getPost(postid, username, password):
     logger.debug(p)
     return p
 
-# @public
-@authenticated(pos=2)
-def blogger_getRecentPosts(user, appkey, blogid, num_posts=50):
+
+def blogger_getRecentPosts(appkey, blogid, username, password, num_posts=50):
     """ returns a list of recent posts """
     logger.debug( "blogger.getRecentPosts called...")
+    user = get_user(username,  password)
+    if not is_user_blog(user, blogid):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    
     blog = Blog.objects.get(id=blogid)
     posts = blog.post_set.order_by('-pub_date')[:num_posts]
     return [post_struct(post) for post in posts]
 
-# @public
+
 def metaWeblog_getRecentPosts(blogid, username, password, num_posts=50):
     """ returns a list of recent posts..."""
     logger.debug( "metaWeblog.getRecentPosts called...")
     logger.debug( "user %s, blogid %s, num_posts %s" % (user, blogid, num_posts))
     logger.info("WordPress compatibility, ignoring blogid")
     user = get_user(username, password, blogid=blogid)
+    if not is_user_blog(user, blogid):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    
     # blog = Blog.objects.get(id=blogid)
     posts = user.author.post_set.order_by('-pub_date')[:num_posts]
     return [post_struct(post) for post in posts]
     
 
 # @public
-@authenticated()
-def blogger_getUserInfo(user, appkey):
+
+def blogger_getUserInfo(appkey, username, password):
     """ returns userinfo for particular user..."""
     logger.debug( "blogger.getUserInfo called")
     # author = user # Author.objects.get(user=user)
+    user = get_user(username,  password)
     firstname = user.first_name
     lastname = user.last_name
     struct = {}
@@ -428,13 +434,14 @@ def blogger_getUsersBlogs(appkey, username, password):
     return res
 
 # @public
-@authenticated()
-def metaWeblog_getUsersBlogs(user, appkey):
+
+def metaWeblog_getUsersBlogs(appkey, username, password):
     # the original metaWeblog API didn't include this
     # it was added in 2003, once blogger jumped ship from using
     # the blogger API
     # http://www.xmlrpc.com/stories/storyReader$2460
     logger.debug( "metaWeblog.getUsersBlogs called")
+    user = get_user(username, password)
     usersblogs = Blog.objects.filter(owner=user)
     logger.debug( "%s blogs for %s" % (usersblogs, user))
     # return usersblogs
@@ -449,8 +456,8 @@ def metaWeblog_getUsersBlogs(user, appkey):
     return res
     
 # @public
-@authenticated()
-def mt_publishPost(user, postid):
+
+def mt_publishPost(postid, username, password):
     """
     lies that it publishes the thing, mostly for compatibility
     porpoises...
@@ -458,18 +465,18 @@ def mt_publishPost(user, postid):
     return True
     
 # @public
-@authenticated(pos=2)
-def blogger_deletePost(user, appkey, post_id, publish):
+
+def blogger_deletePost(appkey, post_id, username, password, publish=False):
     """ deletes the specified post..."""
     logger.debug("blogger.deletePost called")
-    #print "GOT APPKEY", appkey
-    #print "GOT PUBLISH:",publish
+    user = get_user(username, password)
     post = Post.objects.get(pk=post_id)
-    #print "DELETING:",post
+    if post.author.user != user:
+            raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
+    logger.warn("Deleting post %s by user %s" % (post.id, user))
     post.delete()
-
     return True
-# @public
+
 def mt_getCategoryList(blogid, username, password):
     """ takes the blogid, and returns a list of categories"""
     logger.debug( "mt_getCategoryList called")
@@ -573,8 +580,8 @@ def mt_getPostCategories(postid, username, password):
     logger.debug( "mt_getPostCategories called...")
     logger.warn("Categories no longer supported")
     user = get_user(username, password)
-    if not is_user_blog(user, blogid):
-        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    # if not is_user_blog(user, blogid):
+    #    raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
     if post.author.user != user:
         raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
     
@@ -619,28 +626,33 @@ def mt_supportedTextFilters():
 
     
 # @public
-@authenticated()
-def mt_setPostCategories(user, postid, cats):
+
+def mt_setPostCategories(postid, username, password, cats):
     """
     mt version of setpostcats
     takes a primary as argument
     """
     logger.debug( "mt_setPostCategories called...")
     logger.info("Submitted with %s" % cats)
-    logger.warn("Categories no longer supported")
-    # post = Post.objects.get(pk=postid)
-    # logger.debug("Old cats: %s" % post.categories.all())
-    # post.categories.clear()
-    # catlist = []
-    # for cat in cats:
-    #     category = Category.objects.get(pk=cat['categoryId'])
-    #     # print "Got", category
-    #     if cat.has_key('isPrimary') and cat['isPrimary']:
-    #         logger.debug("Got primary category '%s'" % cat)
-    #         post.primary_category_name = category
-    #     post.categories.add(category)
-    # logger.debug("New cats: %s" % post.categories.all())
-    # post.save()
+
+    user = get_user(username, password)
+    post = Post.objects.get(pk=postid)
+    if post.author.user != user:
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
+    
+
+    logger.debug("Old cats: %s" % post.categories.all())
+    post.categories.clear()
+    catlist = []
+    for cat in cats:
+        category = Category.objects.get(pk=cat['categoryId'])
+        logger.debug("Got %s" % category)
+        if cat.has_key('isPrimary') and cat['isPrimary']:
+            logger.debug("Got primary category '%s'" % cat)
+            post.primary_category_name = category
+        post.categories.add(category)
+    logger.debug("New cats: %s" % post.categories.all())
+    post.save()
     logger.debug(" mt_setPostCategories Done.")
     return True
 
@@ -664,8 +676,8 @@ def xblog_getIdList(user,blogid):
     
     return idlist
 
-@authenticated(pos=0)
-def wp_getUsersBlogs(user):
+
+def wp_getUsersBlogs(username, password):
     """
     wp.getUsersBlogs
     Retrieve the blogs of the users.
@@ -682,7 +694,8 @@ def wp_getUsersBlogs(user):
                 string blogName
                 string xmlrpc
     """
-    logger.info( "wp.getUsersBlogs called")
+    logger.debug( "wp.getUsersBlogs called")
+    user = get_user(username, password)
     # print "Got user", user
     usersblogs = Blog.objects.filter(owner=user)
     logger.debug( "%s blogs for %s" % (usersblogs, user))
@@ -694,15 +707,13 @@ def wp_getUsersBlogs(user):
     'blogid':str(blog.id),
     'blogName': blog.title,
     # 'xmlrpc': reverse("xmlrpc"),
-    'xmlrpc': "https://%s/xmlrpc/" % blog.site.domain,
-
-    } for blog in usersblogs
-    ]
+    # non-ssl for debug
+    'xmlrpc': settings.DEBUG and "http://%s/xmlrpc/" % blog.site.domain or "https://%s/xmlrpc/" % blog.site.domain,
+    } for blog in usersblogs ]
     logger.debug(res)
     return res
 
-@authenticated(pos=1)
-def wp_getOptions(user, blog_id, struct={}):
+def wp_getOptions(blog_id, username, password, options=[]):
     """
     int blog_id
     string username
@@ -717,10 +728,15 @@ def wp_getOptions(user, blog_id, struct={}):
             string option
     """
     logger.debug("wp.getOptions entered")
-    logger.debug("user: %s" % user)
+    logger.debug("user: %s" % username)
     logger.debug("blog_id: %s" % blog_id)
-    logger.debug("struct: %s" % struct)
+    logger.debug("struct: %s" % options)
+    user = get_user(username, password)
+    if not is_user_blog(user, blog_id):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blog_id))
+    
     blog = Blog.objects.get(pk=blog_id)
+    
     admin_url = {
         'value': urlparse.urljoin(blog.get_url(), "admin"),
         'desc': "The URL to the admin area",
@@ -816,8 +832,7 @@ def wp_getTags(blog_id, user, password):
     logger.debug("res: %s" % res)
     return res
 
-@authenticated(pos=1)
-def wp_newPost(user, blog_id, content):
+def wp_newPost(blog_id, username, password, content):
     """
     Parameters
     int blog_id
@@ -893,9 +908,13 @@ def wp_newPost(user, blog_id, content):
     
     """
     logger.debug("wp.newPost entered")
-    logger.debug("user: %s" % str(user))
+    logger.debug("user: %s" % str(username))
     logger.debug("blog_id: %s" % str(blog_id))
     logger.debug("content:\n%s" % str(content))
+    
+    user = get_user(username, password)
+    if not is_user_blog(user, blog_id):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blog_id))
     
     blog = Blog.objects.get(pk=blog_id)
     logger.info("blog: %s" % str(blog))    
@@ -930,7 +949,63 @@ def wp_newPost(user, blog_id, content):
     # set tags
     return str(post.id)
 
-@authenticated(pos=1)
-def wp_getCategories(user, blog_id):
-    return []
-
+def wp_getCategories(blog_id, username, password):
+    """
+    Parameters
+        int blog_id
+        string username
+        string password
+    Return Values
+        array
+            struct
+                int categoryId
+                int parentId
+                string description
+                string categoryName
+                string htmlUrl
+                string rssUrl
+    example from wordpress.com
+    [{'categoryDescription': '',
+      'categoryId': 1356,
+      'categoryName': 'Blogroll',
+      'description': 'Blogroll',
+      'htmlUrl': 'https://rubelongfellow.wordpress.com/category/blogroll/',
+      'parentId': 0,
+      'rssUrl': 'https://rubelongfellow.wordpress.com/category/blogroll/feed/'},
+     {'categoryDescription': '',
+      'categoryId': 42431,
+      'categoryName': 'Gearhead',
+      'description': 'Gearhead',
+      'htmlUrl': 'https://rubelongfellow.wordpress.com/category/gearhead/',
+      'parentId': 0,
+      'rssUrl': 'https://rubelongfellow.wordpress.com/category/gearhead/feed/'},
+     {'categoryDescription': '',
+      'categoryId': 1,
+      'categoryName': 'Uncategorized',
+      'description': 'Uncategorized',
+      'htmlUrl': 'https://rubelongfellow.wordpress.com/category/uncategorized/',
+      'parentId': 0,
+      'rssUrl': 'https://rubelongfellow.wordpress.com/category/uncategorized/feed/'}]
+    """
+    logger.debug("%s.wp_getCategories entered" % __name__)
+    res = []
+    user = get_user(username, password)
+    
+    if not is_user_blog(user, blog_id):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blog_id))
+    
+    blog = Blog.objects.get(pk=blog_id)
+    logger.debug("getting categories for %s" % blog)
+    
+    for cat in Category.objects.filter(blog=blog):
+        res.append({
+            'categoryDescription': cat.description,
+            'categoryId': cat.id,
+            'categoryName': cat.title,
+            'description': cat.description,
+            'htmlUrl': cat.blog.get_absolute_url(),
+            'parentId': blog.id,
+            'rssUrl': os.path.join(cat.blog.get_absolute_url(), "feed"),
+        })
+    
+    return res

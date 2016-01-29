@@ -12,8 +12,9 @@
 {% block maincontent %}
 	<!-- begin main blog overview -->
 	{% for object in latest %}
-    {% ifchanged %}<h4>{{ object.pub_date|date:"j F, Y" }}</h4>{% endifchanged %}
+    <div class="post-preview">
     {% include "includes/post_template.txt" %}
+    </div>
 	{% endfor %}
 	<!-- end main blog overview -->
           

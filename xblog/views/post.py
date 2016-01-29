@@ -45,7 +45,7 @@ class PostUpdateView(SuccessMessageMixin, UpdateView):
     """
     success_message = "Post '%(title)s' saved!" 
     model = Post
-    fields = ['title', 'body', 'status', 'tags', 'text_filter', 'post_format']
+    fields = ['title', 'body', 'status', 'categories', 'tags', 'text_filter', 'post_format']
     
     def get_success_message(self, cleaned_data):
         return self.success_message % dict(cleaned_data)

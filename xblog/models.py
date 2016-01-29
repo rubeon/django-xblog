@@ -6,6 +6,7 @@ from django.core.validators import MinLengthValidator
 # from django.utils.text import truncate_html_words
 # replaced by the following
 from django.utils.text import Truncator
+from django.utils.encoding import python_2_unicode_compatible
 # for setting default date
 import django.utils.timezone
 from django.conf import settings
@@ -14,6 +15,8 @@ from django.contrib.sites.managers import CurrentSiteManager
 from django.forms import ModelForm
 
 from django.db.models.signals import post_save
+
+import urlparse
 
 try:
     from django.contrib.auth import get_user_model
@@ -126,6 +129,7 @@ def xmlify(data):
 
     return data
 
+@python_2_unicode_compatible
 class LinkCategory(models.Model):
     """Categories for  the blogroll"""
     title = models.CharField(blank=True, max_length=255)
@@ -144,6 +148,7 @@ class LinkCategory(models.Model):
     __repr__=__str__
 
 
+@python_2_unicode_compatible
 class Link(models.Model):
     """Blogroll Struct"""
     url = models.URLField(blank=True)
@@ -164,6 +169,7 @@ class Link(models.Model):
     
     __repr__=__str__
 
+@python_2_unicode_compatible
 class Pingback(models.Model):
     """ Replies are either pingbacks """
     
@@ -209,6 +215,7 @@ class Tag(models.Model):
         return self.title
 
 
+@python_2_unicode_compatible
 class Author(models.Model):
     """User guy"""
     fullname = models.CharField(blank=True, max_length=100)
@@ -226,12 +233,7 @@ class Author(models.Model):
     def get_avatar_url(self):
         logger.debug("%s: %s" % (self, "Getting avatar url"))
         return self.avatar.url
-        
-    
-        
-    def __str__(self):
-        return "%s (%s)" % (self.fullname,self.user.username)
-        
+
     def save(self):
         """
         special instructions on save
@@ -244,7 +246,7 @@ class Author(models.Model):
         
         super(self.__class__, self).save()
         
-    def __unicode__(self):
+    def __str__(self):
         if self.fullname == '':
             return str(self.user)
         else:
@@ -257,10 +259,38 @@ class Category(models.Model):
     title = models.CharField(blank=False, max_length=255)
     description = models.CharField(blank=True, max_length=100)
     blog = models.ForeignKey("Blog")
+    slug = models.SlugField(max_length=100)
     
     def __unicode__(self):
         return self.title
+    
+    def get_absolute_url(self, absolute=False):
+        """
+        setting absolute will prepened host's URL
+        """
+        
+        local_url = urlparse.urljoin(self.blog.get_absolute_url(),self.slug)
+        # dumb
+        if local_url[-1]!="/":
+            local_url = local_url + "/"
+        
+        if absolute:
+            return "http://%s" % self.blog.site.domain + local_url 
+        else:
+            return local_url
+            
+    def save(self):
+        
+        if not self.slug or self.slug=='':
+            self.slug = SlugifyUniquely(self.title, self.__class__)
+            
+        logger.debug("%s.Category.save entered %s" % (__name__, self.title))
+        super(self.__class__, self).save()
+        logger.debug("category.save complete")
+        
+        
 
+@python_2_unicode_compatible
 class Post(models.Model):
     """A Blog Entry, natch"""
     # metadata
@@ -276,7 +306,7 @@ class Post(models.Model):
     body = models.TextField(blank=True)
     summary = models.TextField(blank=True)
     categories = models.ManyToManyField(Category)
-    # primary_category_name = models.ForeignKey(Category, related_name='primary_category_set', blank=True, null=True)
+    primary_category_name = models.ForeignKey(Category, related_name='primary_category_set', blank=True, null=True)
     tags = models.ManyToManyField(Tag, blank=True)
     blog = models.ForeignKey('Blog')
     # author = models.ForeignKey(User)
@@ -514,6 +544,7 @@ class Blog(models.Model):
     description = models.TextField(blank=True)
     owner = models.ForeignKey(User)
     site = models.ForeignKey(Site)
+    slug = models.SlugField(max_length=100)
 
     objects = models.Manager()
     on_site = CurrentSiteManager()
@@ -528,7 +559,16 @@ class Blog(models.Model):
         return "http://%s/" % self.site.domain
         
     def get_absolute_url(self):
-        return reverse('blog-detail', kwargs={'pk': self.pk})
+        return reverse('blog-detail', kwargs={'slug': self.slug})
+    
+    def save(self):
+        if not self.slug or self.slug=='':
+            self.slug = SlugifyUniquely(self.title, self.__class__)
+        
+        logger.debug("%s.Blog.save entered %s" % (__name__, self.title))
+        super(self.__class__, self).save()
+        logger.debug("blog.save complete")
+    
         
 class PostForm(ModelForm):
     """

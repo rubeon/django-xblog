@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 
 # from xcomments.models import FreeComment
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-from xblog.models import Post, Blog, Author
+from xblog.models import Post, Blog, Author, Category
 from django.views.generic.dates import YearArchiveView
 from django.views.generic.dates import MonthArchiveView
 from django.views.generic.dates import DayArchiveView
@@ -242,9 +242,37 @@ class AuthorUpdateView(UpdateView):
 class AuthorDetailView(DetailView):
     model = Author
     
-    def get_object(self, ):
+    def get_object(self, **kwargs):
         res = get_object_or_404(Author, user__username=self.kwargs.get('username'))
         return res
+
+class CategoryDetailView(ListView):
+    """
+    This is actually a post view.
+    """
+    model = Post
+    slug_url_kwarg = "cat_slug"
+    
+    def get_queryset(self, *args, **kwargs):
+        logger.debug("CategoryDetailView.get_queryset entered...")
+        category = Category.objects.get(slug=self.kwargs[self.slug_url_kwarg])
+        qs = category.post_set.all()
+        return qs
+        
+
+    def get_object(self):
+         # this view should get blog_slug and cat_slug
+         logger.debug("CategoryDetailView.get_object entered")
+         logger.debug(self.args)
+         logger.debug(self.kwargs)
+         blog = Blog.objects.get(slug=self.kwargs['blog_slug'])
+         category = Category.objects.get(slug=self.kwargs['cat_slug'])
+         if category.blog == blog:
+             return category
+         else:
+             return Http404
+    def get_slug_field(self):
+        return "cat_slug"
 
 class BlogCreateView(CreateView):
     model = Blog
@@ -290,7 +318,7 @@ class PostYearArchiveView(YearArchiveView):
         return context
         
     def get_queryset(self):
-        print "get_queryset entererd..."
+        logger.debug("get_queryset entered...")
         if hasattr(self, 'owner'):
             print "i has owner"
             queryset = Post.objects.filter(author=self.owner)
@@ -304,7 +332,7 @@ class PostMonthArchiveView(MonthArchiveView):
     date_field = "pub_date"
     make_object_list = True
     allow_future = True
-    logger.debug(queryset)
+    # logger.debug(queryset)
     Model = Post
     
     def get_context_data(self, **kwargs):
@@ -321,7 +349,7 @@ class PostDayArchiveView(DayArchiveView):
     date_field = "pub_date"
     make_object_list = True
     allow_future = True
-    logger.debug(queryset)
+    # logger.debug(queryset)
     Model = Post
     
     def get_context_data(self, **kwargs):
@@ -339,7 +367,7 @@ class PostArchiveIndexView(ArchiveIndexView):
     date_field = "pub_date"
     make_object_list = True
     allow_future = True
-    logger.debug(queryset)
+    # logger.debug(queryset)
     Model = Post
     allow_empty = True
     
@@ -357,7 +385,7 @@ class PostDateDetailView(DateDetailView):
     date_field = "pub_date"
     make_object_list = True
     allow_future = True
-    logger.debug(queryset)
+    # logger.debug(queryset)
     Model = Post
     
     def get_context_data(self, **kwargs):

@@ -9,8 +9,6 @@
 <link rel="archives" href="{{  request.build_absolute_uri }}archive/" title="Archives" charset="utf-8" />
 <link rel="pingback" href="{{ site.url }}xmlrpc/" />
 <link rel="stylesheet" type="text/css" href="{% static "pygments-css/zenburn.css" %}">
-<link rel="stylesheet" type="text/css" href="{% static "xblog-css/xblog.css" %}">
-<script src="{% static "js/rango-ajax.js" %}"></script>
 {% block blogheaders %}<meta name="description" content="{{ site.name }}" />{% endblock %}
 {% endblock %}
 {% block subpagetitle %}blog{% endblock %}
@@ -50,5 +48,27 @@ Main content goes here.
 		{% ifequal month.month 6  %}<br />{% endifequal %}{% endfor %}
 	</div><!-- /blogroll -->
     
+{% endblock %}
+
+{% block pager %}
+    <!-- file: post_archive.html -->
+      <nav>
+        <ul class="pager">
+        {% if page_obj.has_previous %}
+          <li>
+              <a href="?page={{ page_obj.previous_page_number }}">
+              {% bootstrap_icon "circle-arrow-left" %} Previous
+             </a>
+          </li>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <li>
+              <a href="?page={{ page_obj.next_page_number }}">
+                  Next {% bootstrap_icon "circle-arrow-right" %}
+              </a>
+          </li>
+        {% endif %}
+        </ul>
+      </nav>
 {% endblock %}
 
