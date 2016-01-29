@@ -1,0 +1,14 @@
+{% extends "xblog/blog_base.html" %}
+{% load bootstrap3 %}
+
+{% block maincontent %}
+
+<h1>{{ category.title }}</h1>
+<p>{{ category.description }}</p>
+
+{% for object in object_list %}
+{% include "includes/post_template.txt" %}
+{% endfor %}
+
+{% endblock %}
+
