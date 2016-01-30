@@ -40,19 +40,16 @@ logger = logging.getLogger(__name__)
 #
 
 
-@permission_required("xblog.change_post")
+@login_required
 def content_list(request, **kwargs):
     """
     This provides a list of published content...
     """
     logger.debug("content_view entered")
-
-    
-    # get a post_list
+    # get a post_list by current user
     site = get_current_site(request)
-
-    post_list = Post.objects.all().order_by('-pub_date')
-    logger.debug("post_list: %s" % str(post_list))
+    post_list = Post.objects.filter(author=request.user.author).order_by('-pub_date')
+    # logger.debug("post_list: %s" % str(post_list))
     
     c = RequestContext(request, {'post_list': post_list, })
     t = loader.get_template("xblog/content_list.html")

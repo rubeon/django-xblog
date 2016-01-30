@@ -19,27 +19,5 @@
 	<!-- end main blog overview -->
           
 {% endblock %}
-{% block pager %}
-    <!-- file: post_archive.html -->
-      <nav>
-        <ul class="pager">
-        {% if page_obj.has_previous %}
-          <li>
-              <a href="?page={{ page_obj.previous_page_number }}">
-              {% bootstrap_icon "circle-arrow-left" %} Previous
-             </a>
-          </li>
-        {% endif %}
-        {% if page_obj.has_next %}
-          <li>
-              <a href="?page={{ page_obj.next_page_number }}">
-                  Next {% bootstrap_icon "circle-arrow-right" %}
-              </a>
-          </li>
-        {% endif %}
-        </ul>
-      </nav>
-{% endblock %}
-
 <!-- numreplies -->
 <!-- /numreplies -->

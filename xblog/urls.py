@@ -37,7 +37,7 @@ from .views.blog import CategoryDetailView
 from .views.post import PostCreateView
 from .views.post import PostUpdateView
 from .views.post import PostDeleteView
-
+from .views.post import xhr_tags
 
 
 
@@ -87,7 +87,7 @@ urlpatterns = [
     url(r'add_blog/$', login_required(BlogCreateView.as_view()), name='blog-add'),
     url(blog_update_pattern, login_required(BlogUpdateView.as_view()), name='blog-update'),
     url(blog_detail_pattern, BlogDetailView.as_view(), name='blog-detail'),
-    url(category_detail_pattern, CategoryDetailView.as_view(paginate_by=PAGE_LENGTH), name='blog-detail'),
+    url(category_detail_pattern, CategoryDetailView.as_view(paginate_by=PAGE_LENGTH), name='category-detail'),
 
     url(r'add_author/$', staff_member_required(AuthorCreateView.as_view()), name='author-add'),
     url(author_detail_pattern, AuthorDetailView.as_view(), name='author-detail'),
@@ -105,6 +105,7 @@ urlpatterns = [
     #     queryset=Post.objects.all().filter(status="publish").select_related('author')), 
     #     name='archive-index',  ),
     url(r'^(?P<owner>\w+)/(?P<year>[0-9]{4})/$', PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH)),
+    url(r'^tags/$', xhr_tags),
     url(r'^$', PostArchiveIndexView.as_view(model=Post,
         date_field="pub_date",
         paginate_by=PAGE_LENGTH,

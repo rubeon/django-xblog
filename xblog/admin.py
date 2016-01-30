@@ -46,7 +46,7 @@ admin.site.register(Author, AuthorAdmin)
 # 
 class PostAdmin(admin.ModelAdmin):
     # list_display = ('title',)
-    list_display = ('title','pub_date') #,'author','status')
+    list_display = ('title','slug', 'pub_date') #,'author','status')
     search_fields = ('title','body','slug')
     date_hierarchy = 'pub_date'
     list_filter = ['author','pub_date', 'status', 'tags', ]

@@ -2,6 +2,7 @@ from django.db import models
 from django.template.defaultfilters import slugify
 # from django.contrib.auth.models import User 
 from django.core.mail import mail_managers, send_mail
+from django.core.exceptions import PermissionDenied
 from django.core.validators import MinLengthValidator
 # from django.utils.text import truncate_html_words
 # replaced by the following
@@ -191,9 +192,9 @@ class Pingback(models.Model):
     def __repr__(self):
         return "%s (%s - %s)" % (self.title, self.source_url, self.target_url)
 
-    def save(self):
+    def save(self, *args, **kwargs):
         logger.debug("Pingback.save() entered: %s" % self)
-        super(self.__class__, self).save()
+        super(self.__class__, self).save(*args, **kwargs)
         mail_subject = "New Pingback from %s" % self.title.strip()
         mail_body = """        
         
@@ -234,7 +235,7 @@ class Author(models.Model):
         logger.debug("%s: %s" % (self, "Getting avatar url"))
         return self.avatar.url
 
-    def save(self):
+    def save(self, *args, **kwargs):
         """
         special instructions on save
         """
@@ -244,7 +245,7 @@ class Author(models.Model):
                     self.remote_access_key=random_string()
         # check if a name was give
         
-        super(self.__class__, self).save()
+        super(self.__class__, self).save(*args, **kwargs)
         
     def __str__(self):
         if self.fullname == '':
@@ -279,13 +280,13 @@ class Category(models.Model):
         else:
             return local_url
             
-    def save(self):
+    def save(self, *args, **kwargs):
         
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
             
         logger.debug("%s.Category.save entered %s" % (__name__, self.title))
-        super(self.__class__, self).save()
+        super(self.__class__, self).save(*args, **kwargs)
         logger.debug("category.save complete")
         
         
@@ -378,8 +379,13 @@ class Post(models.Model):
         self.tags = taglist
 
             
-    def save(self):
+    def save(self, *args, **kwargs):
         logger.debug("Post.save entered for %s" % self)
+        # make sure that person is allowed to create posts in this blog
+        if self.author.user != self.blog.owner and not self.author.user.is_superuser:
+            print self.author.user
+            print self.blog.owner
+            raise PermissionDenied
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
             
@@ -387,7 +393,7 @@ class Post(models.Model):
         logger.debug("Post.save ---")
         logger.debug(trunc)
         self.summary = trunc
-        super(self.__class__, self).save()
+        super(self.__class__, self).save(*args, **kwargs)
         logger.debug("Post.save complete")
         
     def get_archive_url(self):
@@ -561,12 +567,12 @@ class Blog(models.Model):
     def get_absolute_url(self):
         return reverse('blog-detail', kwargs={'slug': self.slug})
     
-    def save(self):
+    def save(self, *args, **kwargs):
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
         
         logger.debug("%s.Blog.save entered %s" % (__name__, self.title))
-        super(self.__class__, self).save()
+        super(self.__class__, self).save(*args, **kwargs)
         logger.debug("blog.save complete")
     
         

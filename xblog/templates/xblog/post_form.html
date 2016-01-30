@@ -1,5 +1,14 @@
 {% extends "xblog/blog_base.html" %}
 {% load bootstrap3 %}
+{% load static %}
+{% block extrahead %}
+<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap-tokenfield.css" %}">
+<script type="text/javascript" src="{% static "js/bootstrap-tokenfield.js" %}"></script>
+<script type="text/javascript" src="{% static "js/typeahead/typeahead.jquery.js" %}"></script>
+<script type="text/javascript" src="{% static "js/typeahead/bloodhound.js" %}"></script>
+
+{% endblock %}
+
 {% block maincontent %}
 <form action="" method="post" accept-charset="utf-8">
 	{% csrf_token %}
@@ -10,6 +19,52 @@
         </button>
     {% endbuttons %}
 
+<div id="default-suggestions" style="background-color: #fff;">
+  <input id="tags" class="typeahead" type="text" placeholder="Space-separated Tags">
+</div>
+
 </form>
+
+<script>
+var API_URL = "/blog/tags/";
+var engine = new Bloodhound({
+    remote: { url : API_URL },
+    datumTokenizer: function(d) {
+    return Bloodhound.tokenizers.whitespace(d.fields.title);
+  },
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    
+  }
+);
+
+promise = engine.initialize();
+promise
+.done(function() { console.log('ready to go!'); })
+.fail(function() { console.log('err, something went wrong :('); });
+
+// $('.typeahead').typeahead(
+//     { 
+//         minLength: 3,
+//         highlight: true,
+//     },
+//     {
+//         name: 'my-dataset',
+//         source: engine,
+//         displayKey: function(tag) {
+//             console.log(tag.fields.title);
+//           return tag.fields.title;        
+//       },
+// });
+
+$('#tags').tokenfield({
+  typeahead: [null, { 
+      source: engine,
+      displayKey: function(tag) {
+          return tag.fields.title;
+      }
+   }]
+});
+</script>
+
 {% endblock %}
 

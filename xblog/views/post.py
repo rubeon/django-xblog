@@ -4,32 +4,57 @@ from django.core.urlresolvers import reverse_lazy
 from django.views.generic.edit import UpdateView
 from django.views.generic.edit import DeleteView
 from django.views.generic.edit import CreateView
+from django.core import serializers
 
 from django.views.generic.detail import DetailView
 
-from django.http import Http404
+from django.http import Http404, HttpResponse
 
 from ..models import Post
 from ..models import Blog
+from ..models import Tag
 
 from django.contrib.sites.models import Site
+import logging
+logger = logging.getLogger(__name__)
+
+def xhr_tags(request): 
+    logger.debug("%s.xhr_tags entered" % __name__)
+    res = []
+    for tag in Tag.objects.all():
+        res.append(tag)
+    if request.is_ajax() or True:
+        data = serializers.serialize('json', res)
+        return HttpResponse(data,'json')
 
 
-# @login_required
+    
 
 class PostCreateView(SuccessMessageMixin, CreateView):
     """
     View for adding a post
     """
     model = Post
-    fields = ['title', 'body', 'status', 'tags', 'text_filter', 'post_format']
+    fields = ['title', 'body', 'status', 'tags', 'text_filter', 'post_format', 'blog', 'categories']
     success_url = reverse_lazy("site-overview")
     success_message = "Post '%(title)s created!"
+    
+    def get_initial(self):
+        """
+        - sets the blog to be the most recently updated one
+        """
+        recent_posts = Post.objects.filter(author=self.request.user.author).order_by("-pub_date")
+        if recent_posts:
+            res = recent_posts[0].blog
+            text_filter = recent_posts[0].text_filter
+        else:
+            res = None
+        return {'blog':res, 'text_filter': text_filter, 'status': 'draft'}
     
     def form_valid(self, form):
         form.instance.author = self.request.user.author
         form.instance.site = Site.objects.get_current()
-        form.instance.blog = Blog.objects.filter(owner=self.request.user)[0]
+        # form.instance.blog = Blog.objects.filter(owner=self.request.user)
         return super(PostCreateView, self).form_valid(form)
         
     def get_success_message(self, cleaned_data):
