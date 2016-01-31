@@ -8,3 +8,4 @@ textstat
 pygments
 markdown2
 django-bootstrap3
+django_xmlrpc
