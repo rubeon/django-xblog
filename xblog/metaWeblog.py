@@ -96,7 +96,7 @@ def get_user(username, apikey, blogid=None):
     logger.debug("user: %s" % username)
     logger.debug("apikey: %s" % apikey)
     try:
-        user = User.objects.get(**{'username__exact':username})
+        user = User.objects.get(**{'username':username})
     except User.DoesNotExist:
         raise Fault(LOGIN_ERROR, 'Username is incorrect.')
     if not apikey == user.author.remote_access_key:
@@ -120,6 +120,32 @@ def is_user_blog(user, blogid):
         return True
     else:
         return False
+
+def metaWeblog_deletePost(appkey, postid, username, password, publish=False):
+    """ 
+    Parameters
+        string appkey: Not applicable for WordPress, can be any value and will be ignored.
+        int postid
+        string username
+        string password
+        bool publish: Will be ignored (WP compat.)
+    Return Values
+        bool true
+    Errors
+    401
+        If the user does not have permission to delete this post.
+    404
+        If no post with that postid exists.
+    """
+    logger.debug("metaWeblog_deletePost called")
+    user = get_user(username, password)
+    post = Post.objects.get(pk=postid)
+    if post.author.user != user and not user.is_superuser:
+            raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
+    logger.warn("Deleting post %s by user %s" % (post.id, user))
+    post.delete()
+    return True
+
 
 def metaWeblog_getCategories(blogid, username, password):
     """ 
@@ -145,20 +171,16 @@ def metaWeblog_getCategories(blogid, username, password):
     if not is_user_blog(user, blogid):
         raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
     categories = Category.objects.all().filter(blog__id=blogid)
-    logger.warn("Categories are deprecated")
+    res = []
     for c in categories:
         struct={}
         struct['categoryId'] = str(c.id)
-        # struct['parentId'] = str(0)
-        struct['categoryName']= c.title
         struct['parentId'] = ''
-        struct['title'] = c.title
-        # if c.description == '':
-        #     struct['categoryDescription'] = c.title
-        # else:
-        #     struct['categoryDescription'] = c.description
-        # struct['description'] = struct['categoryDescription']
-        struct['htmlUrl'] = "http://dev.ehw.io"
+        struct['categoryName']= c.title
+        struct['categoryDescription'] = c.description
+        struct['description'] = c.title
+        struct['htmlUrl'] = c.get_absolute_url(absolute=True)
+        struct['rssUrl'] = c.get_absolute_url(absolute=True) + "feed/"
         res.append(struct)
     logger.debug(res)
     return res
@@ -279,7 +301,7 @@ def metaWeblog_editPost(postid, username, password, struct, publish):
     post = Post.objects.get(id=postid)    
     # if not is_user_blog(user, blogid):
     #     raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
-    if post.author.user != user:
+    if post.author.user != user and not user.is_superuser:
         raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
     
 
@@ -371,7 +393,7 @@ def blogger_getRecentPosts(appkey, blogid, username, password, num_posts=50):
 def metaWeblog_getRecentPosts(blogid, username, password, num_posts=50):
     """ returns a list of recent posts..."""
     logger.debug( "metaWeblog.getRecentPosts called...")
-    logger.debug( "user %s, blogid %s, num_posts %s" % (user, blogid, num_posts))
+    logger.debug( "username %s, blogid %s, num_posts %s" % (username, blogid, num_posts))
     logger.info("WordPress compatibility, ignoring blogid")
     user = get_user(username, password, blogid=blogid)
     if not is_user_blog(user, blogid):
@@ -379,6 +401,7 @@ def metaWeblog_getRecentPosts(blogid, username, password, num_posts=50):
     
     # blog = Blog.objects.get(id=blogid)
     posts = user.author.post_set.order_by('-pub_date')[:num_posts]
+    
     return [post_struct(post) for post in posts]
     
 

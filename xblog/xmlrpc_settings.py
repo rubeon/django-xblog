@@ -7,6 +7,7 @@ XMLRPC_METHODS = (
     ('xblog.metaWeblog.blogger_getUsersBlogs', 'blogger.getUsersBlogs'),
     ('xblog.metaWeblog.wp_getUsersBlogs', 'wp.getUsersBlogs'),
     ('xblog.metaWeblog.wp_getOptions', 'wp.getOptions'),
+    ('xblog.metaWeblog.metaWeblog_deletePost', 'metaWeblog.deletePost'),
     ('xblog.metaWeblog.metaWeblog_editPost', 'metaWeblog.editPost'),
     ('xblog.metaWeblog.metaWeblog_getCategories', 'metaWeblog.getCategories'),
     ('xblog.metaWeblog.metaWeblog_getRecentPosts', 'metaWeblog.getRecentPosts'),

@@ -20,8 +20,6 @@ SITE_ID=1
 ROOT_URLCONF = 'xblog.tests.conf.urls'
 
 from xblog.xmlrpc_settings import XMLRPC_METHODS
-print 20*"X"
-print XMLRPC_METHODS
 
 DATABASES = {
     'default': {

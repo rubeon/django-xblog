@@ -133,6 +133,15 @@ class MetaWeblogTestCase(TestCase):
             is_staff=False,
             is_superuser=False
         )
+        self.rogue_user = User.objects.create(
+            username="rogue_user", 
+            first_name="Rogue",
+            last_name="User",
+            email="testuser2@example.com",
+            password="MyTestPass1",
+            is_staff=False,
+            is_superuser=False
+        )
         self.test_admin = User.objects.create(
             username="admin", 
             first_name="Admin",
@@ -150,6 +159,21 @@ class MetaWeblogTestCase(TestCase):
             site = Site.objects.get_current()
         )
         
+        self.test_category1 = Category.objects.create(
+            title="Test Category 1",
+            description="Category mean namely for testing",
+            blog = self.test_blog
+        )
+        
+        self.post = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author
+        )
+        self.post.save()
+        
+        
         # enable remote access for test_user1
         self.test_user1.author.remote_access_enabled = True
         self.test_user1.author.save()
@@ -158,8 +182,14 @@ class MetaWeblogTestCase(TestCase):
         self.test_user2.author.remote_access_enabled = False
         self.test_user2.author.save()
         
+        self.rogue_user.author.remote_access_enabled = True
+        self.rogue_user.author.save()
         
-        self.s = ServerProxy('http://localhost:8000/xmlrpc/', transport=TestTransport(), verbose=1)
+        self.test_admin.author.remote_access_enabled = True
+        self.test_admin.author.save()
+        
+        
+        self.s = ServerProxy('http://localhost:8000/xmlrpc/', transport=TestTransport(), verbose=0)
         
     def test_getApiKey(self):
         """
@@ -168,7 +198,8 @@ class MetaWeblogTestCase(TestCase):
         self.test_user1.author.remote_access_enabled = True
         self.test_user1.author.save()
         self.assertTrue(len(self.test_user1.author.remote_access_key)>1)
-    
+
+    # metaWeblog.getUsersBlogs    
     def test_getUsersBlogs_correct_blogs(self):
         """
         see if the blogs are properly returned
@@ -182,9 +213,9 @@ class MetaWeblogTestCase(TestCase):
         for blog in res:
             b = Blog.objects.get(id=blog['blogid'])
             self.assertEqual(self.test_user1, b.owner)
-    
+
+    # metaWeblog.newPost
     def test_newPost_own_blog(self):
-        # metaWeblog.newPost
         appkey = 0
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
@@ -192,6 +223,7 @@ class MetaWeblogTestCase(TestCase):
         res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
         self.assertEqual(type(1), type(int(res)))
     
+    # metaWeblog.getPost
     def test_getPost_own_blog(self):
         appkey = 0
         username = self.test_user1.username
@@ -207,6 +239,18 @@ class MetaWeblogTestCase(TestCase):
                     self.assertEqual(post_content['title'], post['title'])
                     self.assertEqual(post_content['description'], post['description'])
 
+    def test_getPost_others_blog(self):
+        """
+        A user should not be able to getPost on another user's blog
+        """
+        appkey = 0
+        username = self.rogue_user.username
+        password = self.rogue_user.author.remote_access_key
+        
+        with self.assertRaises(Fault):
+            post = self.s.metaWeblog.getPost(self.post.id, username, password)
+        
+        
     # metaWeblog.deletePost
     def test_deletePost_own_post(self):
         """
@@ -219,24 +263,169 @@ class MetaWeblogTestCase(TestCase):
             blog = self.test_blog,
             author = self.test_user1.author
         )
-
-        # now delete it...
+        post.save()
+        # # now delete it...
         appkey = 0
         postid = post.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         publish = False
         res = self.s.metaWeblog.deletePost(appkey, postid, username, password, publish)
+        with self.assertRaises(Post.DoesNotExist):
+            gone_post = Post.objects.get(id=post.id)
+    
+    def test_deletePost_others_post(self):
+        """
+        deletePost should fail if not the owner or a sysadmin
+        """
+        post = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author
+        )
+        post.save()
+        # # now try to delete it as other user
+        appkey = 0
+        username = self.rogue_user.username
+        password = self.rogue_user.author.remote_access_key
+        postid = post.id
+        publish = False
         
-        gone_post = Post.objects.get(id=post.id)
+        with self.assertRaises(Fault):
+            res = self.s.metaWeblog.deletePost(appkey, postid, username, password, publish)
+
+    def test_deletePost_others_post_admin(self):
+        """
+        deletePost should success if not the owner but is a sysadmin
+        """
+        post = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author
+        )
+        post.save()
+        # # now try to delete it as other user
+        appkey = 0
+        username = self.test_admin.username
+        password = self.test_admin.author.remote_access_key
+        postid = post.id
+        publish = False
+        
+        res = self.s.metaWeblog.deletePost(appkey, postid, username, password, publish)
+        
+        
         
     # metaWeblog.editPost
+    def test_editPost_own(self):
+        """
+        Admin User should be able to edit others' posts
+        """
+        post = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author
+        )
+        post.save()
+        # # now try to delete it as other user
+        appkey = 0
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        postid = post.id
+        publish = False
+        new_content = post_content.copy()
+        new_content['title']="This is the new title"
+        res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
+        
+        post = Post.objects.get(id=postid)
+        
+        self.assertEquals(post.title, new_content['title'])
 
+    def test_editPost_admin(self):
+        """
+        Admin User should be able to edit others' posts
+        """
+        post = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author
+        )
+        post.save()
+        # # now try to delete it as other user
+        appkey = 0
+        username = self.test_admin.username
+        password = self.test_admin.author.remote_access_key
+        postid = post.id
+        publish = False
+        new_content = post_content.copy()
+        new_content['title']="This is the new title"
+        res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
+        post = Post.objects.get(id=postid)
+        self.assertEquals(post.title, new_content['title'])
+        
     # metaWeblog.getCategories
-    # metaWeblog.getPost
+    def test_getCategories_own_blog(self):
+        """
+        Should return a valid list of categories for this user's blog
+        """
+        blogid = self.test_blog.id
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        
+        cats = self.s.metaWeblog.getCategories(blogid, username, password)
+        
+        for cat in cats:
+            local_cat = Category.objects.get(id=cat['categoryId'])
+
+            self.assertEqual(str(local_cat.id), cat['categoryId'])
+            self.assertEqual(local_cat.title, cat['categoryName'])
+            self.assertEqual(local_cat.description, cat['categoryDescription'])
+            self.assertEqual(local_cat.title, cat['description'])
+            self.assertIn(local_cat.get_absolute_url(), cat['htmlUrl'])
+            # FIXME: need to update once feeds have been done...
+            self.assertIn(local_cat.get_absolute_url()+"feed/", cat['rssUrl'])
+            
     # metaWeblog.getRecentPosts
-    # metaWeblog.getTemplate
-    # metaWeblog.getUsersBlogs
+    def test_getRecentPosts_own_blog(self):
+        # create 10 posts
+        
+        blogid = self.test_blog.id
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        
+        
+        for i in range(10):
+            title = "Test Post %s" % str(i)
+            body = "This is test post number %s" % i
+            blog = self.test_blog
+            author = self.test_user1.author
+            p = Post(
+                title=title,
+                body=body,
+                author=author,
+                blog=blog
+            )
+            p.save()
+        num_posts = 10
+        posts = self.s.metaWeblog.getRecentPosts(blogid, username, password, num_posts)
+        self.assertEqual(10, len(posts))
+        
+    def test_getRecentPosts_others_blog(self):
+        """
+        this should fail for mr. bad guy rogue user
+        """
+        blogid = self.test_blog.id
+        username = self.rogue_user.username
+        password = self.rogue_user.author.remote_access_key
+        num_posts = 10
+        with self.assertRaises(Fault):
+            posts = self.s.metaWeblog.getRecentPosts(blogid, username, password, num_posts)
+    
+    # metaWeblog.getTemplate -- not WP-supported
+    # metaWeblog.setTemplate -- not WP-supported
+    
     # metaWeblog.newMediaObject
-    # metaWeblog.newPost
-    # metaWeblog.setTemplate
+
