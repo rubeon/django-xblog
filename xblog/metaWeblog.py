@@ -224,6 +224,7 @@ def metaWeblog_newPost(blogid, username, password, struct, publish="PUBLISH"):
     
     try:
         logger.info("Checking for passed blog parameter")
+        print blogid
         blog = Blog.objects.get(pk=blogid)
     except ValueError:
         # probably expecting wp behavior

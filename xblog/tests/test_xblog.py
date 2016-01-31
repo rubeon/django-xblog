@@ -139,24 +139,8 @@ class PostTestCase(TestCase):
         )
         self.assertEquals(body, p.get_full_body())
         
-    def test_post_text_filter_html(self):
-        """
-        HTML filter should return the raw text, more or less
-        """
-        test_user1 = User.objects.get(username='test_user1')
-        source_file = os.path.join(BASE_DIR, "resources/test_post.html")
-        body = open(source_file).read()
-        p = Post.objects.create(
-            title = "Test Text",
-            body = open(source_file).read(),
-            blog = Blog.objects.get(owner=test_user1),
-            author = test_user1.author,
-            text_filter = 'html'
-        )
-        self.assertEquals(body, p.get_full_body())
-        
     
-    def test_post_text_filter_html(self):
+    def test_post_text_filter_markdown(self):
         """
         HTML filter should return the raw text, more or less
         """
@@ -170,10 +154,10 @@ class PostTestCase(TestCase):
             author = test_user1.author,
             text_filter = 'markdown'
         )
-        print p.get_full_body()
         # make sure link is working
         self.assertIn("<a href=\"http://www.example.com/\">Link text</a>", p.get_full_body())
         
-        
+        # check for footnotes
+        self.assertIn('footnoteBackLink', p.get_full_body())
         
     

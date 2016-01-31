@@ -243,7 +243,6 @@ class Author(models.Model):
             if self.remote_access_enabled:
                 if not self.remote_access_key:
                     self.remote_access_key=random_string()
-        # check if a name was give
         
         super(self.__class__, self).save(*args, **kwargs)
         
@@ -383,8 +382,8 @@ class Post(models.Model):
         logger.debug("Post.save entered for %s" % self)
         # make sure that person is allowed to create posts in this blog
         if self.author.user != self.blog.owner and not self.author.user.is_superuser:
-            print self.author.user
-            print self.blog.owner
+            # print self.author.user
+            # print self.blog.owner
             raise PermissionDenied
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
