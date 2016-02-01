@@ -368,7 +368,7 @@ def metaWeblog_getPost(postid, username, password):
     logger.debug( "metaWeblog.getPost called ")
     user = get_user(username,  password)
     # if not is_user_blog(user, blogid):
-    #     raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    #    raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
     post = Post.objects.get(pk=postid)
     if post.author.user != user:
        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on postid %s' % (user, postid))
@@ -395,11 +395,12 @@ def metaWeblog_getRecentPosts(blogid, username, password, num_posts=50):
     logger.debug( "metaWeblog.getRecentPosts called...")
     logger.debug( "username %s, blogid %s, num_posts %s" % (username, blogid, num_posts))
     logger.info("WordPress compatibility, ignoring blogid")
-    user = get_user(username, password, blogid=blogid)
-    if not is_user_blog(user, blogid):
-        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
-    
-    # blog = Blog.objects.get(id=blogid)
+    user = get_user(username, password)
+    # WP ignores 'blogid', and we're shooting for WP compatibility
+    # if not is_user_blog(user, blogid):
+    #     raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    #
+    # # blog = Blog.objects.get(id=blogid)
     posts = user.author.post_set.order_by('-pub_date')[:num_posts]
     
     return [post_struct(post) for post in posts]
