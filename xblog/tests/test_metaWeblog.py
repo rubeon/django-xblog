@@ -421,8 +421,12 @@ class MetaWeblogTestCase(TestCase):
         username = self.rogue_user.username
         password = self.rogue_user.author.remote_access_key
         num_posts = 10
-        with self.assertRaises(Fault):
-            posts = self.s.metaWeblog.getRecentPosts(blogid, username, password, num_posts)
+        posts = self.s.metaWeblog.getRecentPosts(blogid, username, password, num_posts)
+        
+        for post in posts:
+            p = Post.objects.get(id=post['postid'])
+            owner = p.author.user
+            self.assertEqual(owner, self.rogue_user)
     
     # metaWeblog.getTemplate -- not WP-supported
     # metaWeblog.setTemplate -- not WP-supported

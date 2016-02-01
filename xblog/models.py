@@ -439,16 +439,16 @@ class Post(models.Model):
         # return self.get_absolute_url() + "trackback/"
         # return "".join([settings.SITE_URL,, str(self.id)]) + "/"
         # return settings.SITE_URL + self.get_absolute_url()[1:] + "trackback/"
-        return self.get_absolute_url + "trackback/"
+        return urlparse.urljoin(self.get_absolute_uri(), "trackback/")
     
     def get_absolute_uri(self):
         # returns a url for the interweb
-        blogid = self.blog.id
-        datestr = self.pub_date.strftime("%Y/%b/%d")
-        logging.debug(self.slug)
+        uri = urlparse.urljoin(self.blog.get_url(), self.get_absolute_url())
         return self.get_absolute_url()
 
-
+    # will standardize on this in the future
+    get_url = get_absolute_uri
+    
     def get_absolute_url(self):
         logger.debug("get_absolute_url entered for %s" % self)
         logger.debug("post_format: %s" % self.post_format)
@@ -584,7 +584,7 @@ class PostForm(ModelForm):
         # fields = ["pub_date", "title",  "enable_comments", "body", "text_filter", "blog", "author"]
         # exclude = ['update_date', 'create_date', 'slug', ]
         readonly_fields = ('create_date',)
-        fields = ['title', 'body', 'author',  'status', 'tags', 'text_filter', 'blog',  'guid']
+        fields = ['title', 'body', 'author', 'status', 'tags', 'text_filter', 'blog',  'guid']
 
         
 #class PodcastChannel(models.Model):
