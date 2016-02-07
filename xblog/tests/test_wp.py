@@ -252,20 +252,20 @@ class WpTestCase(TestCase):
     
     # Taxonomies (for categories, tags, and custom taxonomies) - Added in WordPress 3.4
     # wp.getTaxonomy
-    def test_wp_getTaxonomy_own_blog(self):
-        blog_id = self.test_blog.id
-        username = self.test_user1.username
-        password = self.test_user1.author.remote_access_key
-        for taxonomy in ['category', 'link_category','post_format', 'post_tag']:
-            res = self.s.wp.getTaxonomy(blog_id, username, password, taxonomy)
-    
-    # wp.getTaxonomies
-    def test_wp_getTaxonomies(self):
-        blog_id = self.test_blog.id
-        username = self.test_user1.username
-        password = self.test_user1.author.remote_access_key
-        res = self.s.wp.getTaxonomies(blog_id, username, password)
-        
+    # def test_wp_getTaxonomy_own_blog(self):
+    #     blog_id = self.test_blog.id
+    #     username = self.test_user1.username
+    #     password = self.test_user1.author.remote_access_key
+    #     for taxonomy in ['category', 'link_category','post_format', 'post_tag']:
+    #         res = self.s.wp.getTaxonomy(blog_id, username, password, taxonomy)
+    # 
+    # # wp.getTaxonomies
+    # def test_wp_getTaxonomies(self):
+    #     blog_id = self.test_blog.id
+    #     username = self.test_user1.username
+    #     password = self.test_user1.author.remote_access_key
+    #     res = self.s.wp.getTaxonomies(blog_id, username, password)
+    #     
     
     # wp.getTerm
     # wp.getTerms
