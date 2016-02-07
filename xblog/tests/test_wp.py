@@ -239,8 +239,8 @@ class WpTestCase(TestCase):
         
         new_post = Post.objects.get(id=res)
         
-        assertEqual(str(blog_id), str(new_post.blog.id))
-        assertEqual(new_post.author.user, self.test_user1)
+        self.assertEqual(str(blog_id), str(new_post.blog.id))
+        self.assertEqual(new_post.author.user, self.test_user1)
         
     # wp.editPost
     # wp.deletePost

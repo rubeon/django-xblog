@@ -49,6 +49,7 @@ class PostCreateView(SuccessMessageMixin, CreateView):
             text_filter = recent_posts[0].text_filter
         else:
             res = None
+            text_filter = None
         return {'blog':res, 'text_filter': text_filter, 'status': 'draft'}
     
     def form_valid(self, form):

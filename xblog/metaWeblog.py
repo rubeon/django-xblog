@@ -121,31 +121,6 @@ def is_user_blog(user, blogid):
     else:
         return False
 
-def metaWeblog_deletePost(appkey, postid, username, password, publish=False):
-    """ 
-    Parameters
-        string appkey: Not applicable for WordPress, can be any value and will be ignored.
-        int postid
-        string username
-        string password
-        bool publish: Will be ignored (WP compat.)
-    Return Values
-        bool true
-    Errors
-    401
-        If the user does not have permission to delete this post.
-    404
-        If no post with that postid exists.
-    """
-    logger.debug("metaWeblog_deletePost called")
-    user = get_user(username, password)
-    post = Post.objects.get(pk=postid)
-    if post.author.user != user and not user.is_superuser:
-            raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
-    logger.warn("Deleting post %s by user %s" % (post.id, user))
-    post.delete()
-    return True
-
 
 def metaWeblog_getCategories(blogid, username, password):
     """ 
@@ -390,21 +365,6 @@ def blogger_getRecentPosts(appkey, blogid, username, password, num_posts=50):
     return [post_struct(post) for post in posts]
 
 
-def metaWeblog_getRecentPosts(blogid, username, password, num_posts=50):
-    """ returns a list of recent posts..."""
-    logger.debug( "metaWeblog.getRecentPosts called...")
-    logger.debug( "username %s, blogid %s, num_posts %s" % (username, blogid, num_posts))
-    logger.info("WordPress compatibility, ignoring blogid")
-    user = get_user(username, password)
-    # WP ignores 'blogid', and we're shooting for WP compatibility
-    # if not is_user_blog(user, blogid):
-    #     raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
-    #
-    # # blog = Blog.objects.get(id=blogid)
-    posts = user.author.post_set.order_by('-pub_date')[:num_posts]
-    
-    return [post_struct(post) for post in posts]
-    
 
 # @public
 
