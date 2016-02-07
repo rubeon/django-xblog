@@ -1,29 +1,41 @@
 # auto-register file for django_xmlrpc
 
+# from .views import wp
+# import metaWeblog
+
 XMLRPC_METHODS = (
     ('xblog.metaWeblog.blogger_deletePost', 'blogger.deletePost'),
     ('xblog.metaWeblog.blogger_getRecentPosts', 'blogger.getRecentPosts'),
     ('xblog.metaWeblog.blogger_getUserInfo', 'blogger.getUserInfo'),
     ('xblog.metaWeblog.blogger_getUsersBlogs', 'blogger.getUsersBlogs'),
-    ('xblog.metaWeblog.wp_getUsersBlogs', 'wp.getUsersBlogs'),
-    ('xblog.metaWeblog.wp_getOptions', 'wp.getOptions'),
-    ('xblog.metaWeblog.metaWeblog_deletePost', 'metaWeblog.deletePost'),
-    ('xblog.metaWeblog.metaWeblog_editPost', 'metaWeblog.editPost'),
-    ('xblog.metaWeblog.metaWeblog_getCategories', 'metaWeblog.getCategories'),
-    ('xblog.metaWeblog.metaWeblog_getRecentPosts', 'metaWeblog.getRecentPosts'),
-    ('xblog.metaWeblog.metaWeblog_getUsersBlogs', 'metaWeblog.getUsersBlogs'),
-    ('xblog.metaWeblog.metaWeblog_newMediaObject', 'metaWeblog.newMediaObject'),
-    ('xblog.metaWeblog.metaWeblog_newPost', 'metaWeblog.newPost'),
-    ('xblog.metaWeblog.metaWeblog_getPost', 'metaWeblog.getPost'),
+    ('xblog.views.metaWeblog.deletePost', 'metaWeblog.deletePost'),
+    ('xblog.views.metaWeblog.editPost', 'metaWeblog.editPost'),
+    ('xblog.views.metaWeblog.getCategories', 'metaWeblog.getCategories'),
+    ('xblog.views.metaWeblog.getRecentPosts', 'metaWeblog.getRecentPosts'),
+    ('xblog.views.metaWeblog.getUsersBlogs', 'metaWeblog.getUsersBlogs'),
+    ('xblog.views.metaWeblog.newMediaObject', 'metaWeblog.newMediaObject'),
+    ('xblog.views.metaWeblog.newPost', 'metaWeblog.newPost'),
+    ('xblog.views.metaWeblog.getPost', 'metaWeblog.getPost'),
     ('xblog.metaWeblog.mt_getCategoryList', 'mt.getCategoryList'),
     ('xblog.metaWeblog.mt_getPostCategories', 'mt.getPostCategories'),
     ('xblog.metaWeblog.mt_publishPost', 'mt.publishPost'),
     ('xblog.metaWeblog.mt_setPostCategories', 'mt.setPostCategories'),
     ('xblog.metaWeblog.mt_supportedMethods', 'mt.supportedMethods'),
     ('xblog.metaWeblog.mt_supportedTextFilters', 'mt.supportedTextFilters'),
-    ('xblog.metaWeblog.wp_getUsersBlogs', 'wp.getUsersBlogs'),
-    ('xblog.metaWeblog.wp_getOptions', 'wp.getOptions'),
-    ('xblog.metaWeblog.wp_getTags', 'wp.getTags'),
-    ('xblog.metaWeblog.wp_newPost', 'wp.newPost'),
-    ('xblog.metaWeblog.wp_getCategories', 'wp.getCategories'),
+    # ('xblog.views.wp.getUsersBlogs', 'wp.getUsersBlogs'),
+    ('xblog.views.wp.getOptions', 'wp.getOptions'),
+    ('xblog.views.wp.getCategories', 'wp.getCategories'),
+    ('xblog.views.wp.getPosts', 'wp.getPosts'),
+    ('xblog.views.wp.getPost', 'wp.getPost'),
+    ('xblog.views.wp.newPost', 'wp.newPost'),
+    ('xblog.views.wp.getUser', 'wp.getUser'),
+    ('xblog.views.wp.getProfile', 'wp.getProfile'),
+    
+    # ('xblog.views.wp.getTags', 'wp.getTags'),
+
+    ('xblog.views.wp.getUsersBlogs', 'wp.getUsersBlogs'),
+    # ('xblog.views.wp.getOptions', 'wp.getOptions'),
+    # ('xblog.views.wp.getPost', 'wp.getPost'),
+    
+    
 )

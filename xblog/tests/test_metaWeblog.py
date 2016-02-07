@@ -16,6 +16,7 @@ from xblog.models import Blog
 from xblog.models import Author
 from xblog.models import Category
 from xblog.models import Link
+from xblog.models import Tag
 from xblog.models import LinkCategory
 from xblog.models import filters
 
@@ -223,6 +224,34 @@ class MetaWeblogTestCase(TestCase):
         res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
         self.assertEqual(type(1), type(int(res)))
     
+    def test_newPost_nown_blog_tags(self):
+        appkey = 0
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        blog = self.test_blog
+        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
+        post = Post.objects.get(pk=res)
+        # check for tags
+        for tag in post_content['mt_keywords']:
+            t = Tag.objects.get(title=tag)
+            self.assertIn(t, post.tags.all() )
+        
+    def test_newPost_new_category(self):
+        """
+        when a post is created with a category that doesn't exist
+        create that category
+        """
+        appkey = 0
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        blog = self.test_blog
+        post_content['categories'] = ["Status"]
+        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
+        
+        # verify that the category exists
+        cats = Category.objects.filter(blog=self.test_blog, title="Status")
+        self.assertTrue(len(cats) > 0)
+    
     # metaWeblog.getPost
     def test_getPost_own_blog(self):
         appkey = 0
@@ -383,7 +412,7 @@ class MetaWeblogTestCase(TestCase):
             self.assertEqual(str(local_cat.id), cat['categoryId'])
             self.assertEqual(local_cat.title, cat['categoryName'])
             self.assertEqual(local_cat.description, cat['categoryDescription'])
-            self.assertEqual(local_cat.title, cat['description'])
+            self.assertEqual(local_cat.description, cat['description'])
             self.assertIn(local_cat.get_absolute_url(), cat['htmlUrl'])
             # FIXME: need to update once feeds have been done...
             self.assertIn(local_cat.get_absolute_url()+"feed/", cat['rssUrl'])
@@ -421,8 +450,12 @@ class MetaWeblogTestCase(TestCase):
         username = self.rogue_user.username
         password = self.rogue_user.author.remote_access_key
         num_posts = 10
-        with self.assertRaises(Fault):
-            posts = self.s.metaWeblog.getRecentPosts(blogid, username, password, num_posts)
+        posts = self.s.metaWeblog.getRecentPosts(blogid, username, password, num_posts)
+        
+        for post in posts:
+            p = Post.objects.get(id=post['postid'])
+            owner = p.author.user
+            self.assertEqual(owner, self.rogue_user)
     
     # metaWeblog.getTemplate -- not WP-supported
     # metaWeblog.setTemplate -- not WP-supported
