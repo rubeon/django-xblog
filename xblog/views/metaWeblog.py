@@ -28,12 +28,28 @@ import logging
 from django.utils.timezone import now
 from django.contrib.sites.models import Site
 
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+
 # from django.contrib.comments.models import FreeComment
 from django.conf import settings
 from ..models import Tag, Post, Blog, Author, Category, FILTER_CHOICES
 from ..ping_modes import send_pings
 
 logger = logging.getLogger(__name__)
+
+def getPost(post_id, username, password):
+    """ returns an existing post """
+    logger.debug( "metaWeblog.getPost called ")
+    user = get_user(username, password)
+    
+    post = Post.objects.get(pk=post_id)
+    
+    if post.author.user != user and not user.is_superuser:
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, post_id))
+    
+    # post.create_date = format_date(datetime.datetime.now())
+    return post_struct(post)
 
 def getRecentPosts(blogid, username, password, num_posts=50):
     """ returns a list of recent posts..."""
@@ -50,7 +66,112 @@ def getRecentPosts(blogid, username, password, num_posts=50):
     
     return [post_struct(post) for post in posts]
     
+def newPost(blogid, username, password, struct, publish="PUBLISH"):
+    """ mt's newpost function..."""
+    logger.debug( "metaWeblog.newPost called")
+    logger.debug("user: %s" % username)
+    logger.debug("blogid: %s" % blogid)
+    logger.debug("struct: %s" % struct)
+    logger.debug("publish: %s" % publish)
+    body = struct['description']
+    
+    user = get_user(username, password)
+    if not is_user_blog(user, blogid):
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+    
+    try:
+        logger.info("Checking for passed blog parameter")
+        blog = Blog.objects.get(pk=blogid)
+    except ValueError:
+        # probably expecting wp behavior
+        logger.info("Specified blog not found, using default")
+        blog = Blog.objects.filter(owner=user)[0]
 
+    pub_date = now()
+    
+    post = Post(
+        title=struct['title'],
+        body = body,
+        create_date = pub_date,
+        update_date = pub_date,
+        pub_date = pub_date,
+        status = publish and 'publish' or 'draft',
+        blog = blog,
+        author =user.author
+    ) 
+    post.prepopulate()
+    logger.debug( "Saving")
+    # need to save beffore setting many-to-many fields, silly django
+    post.save()
+    categories = struct.get("categories", [])
+    logger.debug("Setting categories: %s" % categories)
+    clist = []
+    for category in categories:
+        try:
+            c = Category.objects.get(blog=blog, title=category)
+            logger.debug("Got category %s" % c)
+            
+        except Category.DoesNotExist:
+            logger.warn("Adding category '%s'" % category )
+            c = Category(blog=blog, title=category)
+            c.save()
+        clist.append(c)
+    post.categories=clist
+    post.save()
+    logger.info("Post %s saved" % post)
+    logger.info("Setting Tags")
+    setTags(post, struct, key="mt_keywords")
+    logger.debug("Handling Pings")
+    logger.info("sending pings to host")
+    send_pings(post)
+    logger.debug("newPost finished")
+    return post.id
+    
+
+def editPost(postid, username, password, struct, publish):
+    logger.debug( "%s.editPost entered" % __name__)
+    user = get_user(username, password)
+    post = Post.objects.get(id=postid)
+    
+    if post.author.user != user and not user.is_superuser:
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
+    
+    title = struct.get('title', None)
+    if title is not None:
+        post.title = title
+    
+    body           = struct.get('description', None)
+    text_more      = struct.get('mt_text_more', '')
+    allow_pings    = struct.get('mt_allow_pings',1)
+
+    description    = struct.get('description','')
+    keywords       = struct.get('mt_keywords',[])
+    text_more      = struct.get('mt_text_more',None)
+    
+    if text_more:
+      # has the extended entry stuff...
+      body = "<!--more-->".join([body, text_more])
+    
+    post.enable_comments = bool(struct.get('mt_allow_comments',1)==1)
+    post.text_filter    = struct.get('mt_convert_breaks','html').lower()
+    
+    if body is not None:
+        post.body = body
+        # todo - parse out technorati tags
+    if user:
+        post.author = user.author
+    
+    if publish:
+        post.status = "publish"
+    else:
+        post.status = "draft"
+      
+    setTags(post, struct, key="mt_keywords")
+    post.update_date = now()
+    post.save()
+    # FIXME: do I really want trackbacks?
+    send_pings(post)
+    return True
 
 def deletePost(appkey, postid, username, password, publish=False):
     """ 
@@ -76,8 +197,6 @@ def deletePost(appkey, postid, username, password, publish=False):
     logger.warn("Deleting post %s by user %s" % (post.id, user))
     post.delete()
     return True
-
-
 
 def getCategories(blogid, username, password):
     """ 
@@ -163,125 +282,7 @@ def newMediaObject(blogid, username, password, data):
     res['type'] = mime
     logger.debug(res)
     return res
-
-def newPost(blogid, username, password, struct, publish="PUBLISH"):
-    """ mt's newpost function..."""
-    logger.debug( "metaWeblog.newPost called")
-    logger.debug("user: %s" % username)
-    logger.debug("blogid: %s" % blogid)
-    logger.debug("struct: %s" % struct)
-    logger.debug("publish: %s" % publish)
-    body = struct['description']
     
-    user = get_user(username, password)
-    if not is_user_blog(user, blogid):
-        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
-    
-    try:
-        logger.info("Checking for passed blog parameter")
-        blog = Blog.objects.get(pk=blogid)
-    except ValueError:
-        # probably expecting wp behavior
-        logger.info("Specified blog not found, using default")
-        blog = Blog.objects.filter(owner=user)[0]
-
-    pub_date = now()
-    
-    post = Post(
-        title=struct['title'],
-        body = body,
-        create_date = pub_date,
-        update_date = pub_date,
-        pub_date = pub_date,
-        status = publish and 'publish' or 'draft',
-        blog = blog,
-        author =user.author
-    ) 
-    post.prepopulate()
-    logger.debug( "Saving")
-    # need to save beffore setting many-to-many fields, silly django
-    post.save()
-    categories = struct.get("categories", [])
-    logger.debug("Setting categories: %s" % categories)
-    clist = []
-    for category in categories:
-        try:
-            c = Category.objects.get(blog=blog, title=category)
-            logger.debug("Got category %s" % c)
-            
-        except Category.DoesNotExist:
-            logger.warn("Adding category '%s'" % category )
-            c = Category(blog=blog, title=category)
-            c.save()
-        clist.append(c)
-    post.categories=clist
-    post.save()
-    logger.info("Post %s saved" % post)
-    logger.info("Setting Tags")
-    setTags(post, struct, key="mt_keywords")
-    logger.debug("Handling Pings")
-    logger.info("sending pings to host")
-    send_pings(post)
-    logger.debug("newPost finished")
-    return post.id
-    
-def editPost(postid, username, password, struct, publish):
-    logger.debug( "%s.editPost entered" % __name__)
-    user = get_user(username, password)
-    post = Post.objects.get(id=postid)
-    
-    if post.author.user != user and not user.is_superuser:
-        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
-    
-    title = struct.get('title', None)
-    if title is not None:
-        post.title = title
-    
-    body           = struct.get('description', None)
-    text_more      = struct.get('mt_text_more', '')
-    allow_pings    = struct.get('mt_allow_pings',1)
-
-    description    = struct.get('description','')
-    keywords       = struct.get('mt_keywords',[])
-    text_more      = struct.get('mt_text_more',None)
-    
-    if text_more:
-      # has the extended entry stuff...
-      body = "<!--more-->".join([body, text_more])
-    
-    post.enable_comments = bool(struct.get('mt_allow_comments',1)==1)
-    post.text_filter    = struct.get('mt_convert_breaks','html').lower()
-    
-    if body is not None:
-        post.body = body
-        # todo - parse out technorati tags
-    if user:
-        post.author = user.author
-    
-    if publish:
-        post.status = "publish"
-    else:
-        post.status = "draft"
-      
-    setTags(post, struct, key="mt_keywords")
-    post.update_date = now()
-    post.save()
-    # FIXME: do I really want trackbacks?
-    send_pings(post)
-    return True
-
-def getPost(post_id, username, password):
-    """ returns an existing post """
-    logger.debug( "metaWeblog.getPost called ")
-    user = get_user(username, password)
-    
-    post = Post.objects.get(pk=post_id)
-    
-    if post.author.user != user and not user.is_superuser:
-        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, post_id))
-    
-    # post.create_date = format_date(datetime.datetime.now())
-    return post_struct(post)
 
 def getUsersBlogs(appkey, username, password):
     # the original metaWeblog API didn't include this
