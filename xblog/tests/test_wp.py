@@ -78,12 +78,12 @@ content = {
     'sticky' : False,
     'post_thumbnail' : [],
     'post_parent' :  0,
-    'terms' : {
-        'mytags': [ContentType.objects.get_for_model(Tag)]
-    },
-    'terms_names':{
-        'mytags':["MyTagNumber1", "MyTagNumber2"],
-    },
+    # 'terms' : {
+    #     'mytags': [ContentType.objects.get_for_model(Tag)]
+    # },
+    # 'terms_names':{
+    #     'mytags':["MyTagNumber1", "MyTagNumber2"],
+    # },
     'enclosure': {
         'url' : '',
         'length' : '',
