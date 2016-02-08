@@ -146,7 +146,13 @@ def editPost(postid, username, password, struct, publish):
 
     description    = struct.get('description','')
     keywords       = struct.get('mt_keywords',[])
-    text_more      = struct.get('mt_text_more',None)
+    
+    # check for string or array
+    if type(keywords) == type(""):
+        # it's been passed as a string.  Damn you, ecto
+        struct['mt_keywords'] = keywords.split(",")
+    
+    text_more = struct.get('mt_text_more',None)
     
     if text_more:
       # has the extended entry stuff...
@@ -154,6 +160,9 @@ def editPost(postid, username, password, struct, publish):
     
     post.enable_comments = bool(struct.get('mt_allow_comments',1)==1)
     post.text_filter    = struct.get('mt_convert_breaks','html').lower()
+    
+    if title:
+        post.title = title
     
     if body is not None:
         post.body = body
@@ -167,8 +176,15 @@ def editPost(postid, username, password, struct, publish):
         post.status = "draft"
       
     setTags(post, struct, key="mt_keywords")
+    
     post.update_date = now()
     post.save()
+    logger.debug("--")
+    logger.debug(post)
+    
+    logger.debug("WHUHR MAH TAGS?")
+    logger.debug(post.tags.all())
+    
     # FIXME: do I really want trackbacks?
     send_pings(post)
     return True
@@ -345,8 +361,8 @@ def setTags(post, struct, key="tags"):
             t.save()
             post.tags.add(t)
             post.save()
-        logger.debug(tags)
-    logger.debug("Post Tags: %s" % str(post.tags))
+        # logger.debug("TAGS: %s" % str(tags))
+    logger.debug("Post Tags: %s" % str(post.tags.all()))
     post.save()
     return True
 

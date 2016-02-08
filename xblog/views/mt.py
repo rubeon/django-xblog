@@ -10,7 +10,7 @@ Currently a work in progress
 """
 try:
     from django.contrib.auth import get_user_model
-    User = settings.AUTH_USER_MODEL
+    User = get_user_model()
 except ImportError:
     from django.contrib.auth.models import User 
 
@@ -19,6 +19,18 @@ import django
 from django.conf import settings
 from ..models import Tag, Post, Blog, Author, Category, FILTER_CHOICES
 
+try:
+    from xmlrpc.client import Fault
+    from xmlrpc.client import DateTime
+except ImportError:  # Python 2
+    from xmlrpclib import Fault
+    from xmlrpclib import DateTime
+
+import logging
+logger = logging.getLogger(__name__)
+
+LOGIN_ERROR = 801
+PERMISSION_DENIED = 803
 
 def publishPost(user, postid):
     """
@@ -92,26 +104,51 @@ def supportedTextFilters():
 
     return res
 
-def setPostCategories(user, postid, cats):
+def setPostCategories(postid, username, password, cats=[]):
     """
     mt version of setpostcats
     takes a primary as argument
     """
     logger.debug( "mt_setPostCategories called...")
     logger.info("Submitted with %s" % cats)
-    logger.warn("Categories no longer supported")
-    # post = Post.objects.get(pk=postid)
-    # logger.debug("Old cats: %s" % post.categories.all())
-    # post.categories.clear()
-    # catlist = []
-    # for cat in cats:
-    #     category = Category.objects.get(pk=cat['categoryId'])
-    #     # print "Got", category
-    #     if cat.has_key('isPrimary') and cat['isPrimary']:
-    #         logger.debug("Got primary category '%s'" % cat)
-    #         post.primary_category_name = category
-    #     post.categories.add(category)
-    # logger.debug("New cats: %s" % post.categories.all())
-    # post.save()
+    user = get_user(username, password)
+    post = Post.objects.get(pk=postid)
+    if post.author.user != user:
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, post_id))
+        
+    logger.debug("Old cats: %s" % post.categories.all())
+    post.categories.clear()
+    catlist = []
+    for cat in cats:
+        category = Category.objects.get(pk=cat['categoryId'])
+        # print "Got", category
+        if cat.has_key('isPrimary') and cat['isPrimary']:
+            logger.debug("Got primary category '%s'" % cat)
+            post.primary_category_name = category
+        post.categories.add(category)
+    logger.debug("New cats: %s" % post.categories.all())
+    post.save()
     logger.debug(" mt_setPostCategories Done.")
     return True
+
+def get_user(username, apikey, blogid=None):
+    """
+    checks if a user is authorized to make this call
+    """
+    logger.debug("%s.get_user entered" % __name__)
+    logger.debug("user: %s" % username)
+    logger.debug("apikey: %s" % apikey)
+    try:
+        user = User.objects.get(**{'username':username})
+        print 20*"---"
+    except User.DoesNotExist:
+        raise Fault(LOGIN_ERROR, 'Username is incorrect.')
+    if not apikey == user.author.remote_access_key:
+        raise Fault(LOGIN_ERROR, 'Password is invalid.')
+    if not user.author.remote_access_enabled:
+        raise Fault(PERMISSION_DENIED, 'Remote access not enabled for this user.')
+    # if not author.is_staff or not author.is_active:
+    #    raise Fault(PERMISSION_DENIED, _('User account unavailable.'))
+    #        raise Fault(PERMISSION_DENIED, _('User cannot %s.') % permission)
+
+    return user

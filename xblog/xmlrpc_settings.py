@@ -19,7 +19,7 @@ XMLRPC_METHODS = (
     ('xblog.metaWeblog.mt_getCategoryList', 'mt.getCategoryList'),
     ('xblog.metaWeblog.mt_getPostCategories', 'mt.getPostCategories'),
     ('xblog.metaWeblog.mt_publishPost', 'mt.publishPost'),
-    ('xblog.metaWeblog.mt_setPostCategories', 'mt.setPostCategories'),
+    ('xblog.views.mt.setPostCategories', 'mt.setPostCategories'),
     ('xblog.metaWeblog.mt_supportedMethods', 'mt.supportedMethods'),
     ('xblog.metaWeblog.mt_supportedTextFilters', 'mt.supportedTextFilters'),
     # ('xblog.views.wp.getUsersBlogs', 'wp.getUsersBlogs'),
@@ -34,7 +34,8 @@ XMLRPC_METHODS = (
     # ('xblog.views.wp.getTags', 'wp.getTags'),
 
     ('xblog.views.wp.getUsersBlogs', 'wp.getUsersBlogs'),
-    # ('xblog.views.wp.getOptions', 'wp.getOptions'),
+    ('xblog.views.wp.newCategory', 'wp.newCategory'),
+    ('xblog.views.wp.getOptions', 'wp.getOptions'),
     # ('xblog.views.wp.getPost', 'wp.getPost'),
     
     

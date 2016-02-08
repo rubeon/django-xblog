@@ -242,6 +242,40 @@ class WpTestCase(TestCase):
         self.assertEqual(str(blog_id), str(new_post.blog.id))
         self.assertEqual(new_post.author.user, self.test_user1)
         
+        
+    def test_wp_new_category_own_blog(self):
+        """
+        creates a new category, makes sure it takes
+        """
+        blog_id = self.test_blog.id
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        
+        new_cat = {
+            'name': 'New Category',
+            'parent_id': 0,
+            'description': 'A great category for stuff!'
+        }
+        
+        res = self.s.wp.newCategory(blog_id, username, password, new_cat)
+        
+        # get the created Category
+        
+        c = Category.objects.get(pk=res)
+        blog = Blog.objects.get(pk=blog_id)
+        self.assertEqual(c.title, new_cat['name'])
+        self.assertEqual(c.description, new_cat['description'])
+        self.assertEqual(c.blog, blog)
+        
+    def test_wp_get_options_own_blog(self):
+        blog_id = self.test_blog.id
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        
+        struct = {}
+        
+        res = self.s.wp.getOptions(blog_id, username, password, struct)
+        
     # wp.editPost
     # wp.deletePost
     # wp.getPostType

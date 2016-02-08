@@ -456,6 +456,39 @@ class MetaWeblogTestCase(TestCase):
             p = Post.objects.get(id=post['postid'])
             owner = p.author.user
             self.assertEqual(owner, self.rogue_user)
+            
+    def test_edit_post_mt_keywords_string(self):
+        """
+        ecto sends mt_keywords as a string, and not as an
+        array
+        
+        this should be detected in the backend and fixed
+        
+        """
+        post = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author
+        )
+        post.save()
+        # # now try to delete it as other user
+        appkey = 0
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        postid = post.id
+        publish = False
+        new_content = post_content.copy()
+        keywords = "One Tag, Two Tag, Red Tag, Blue Tag"
+        new_content['mt_keywords']=keywords
+        print "XXX", new_content
+        res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
+        self.assertTrue(res)
+        
+        for tag in keywords.split(","):
+            t = Tag.objects.get(title__iexact=tag)
+            self.assertIn(t, post.tags.all())
+        
     
     # metaWeblog.getTemplate -- not WP-supported
     # metaWeblog.setTemplate -- not WP-supported

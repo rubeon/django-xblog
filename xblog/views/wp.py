@@ -228,94 +228,23 @@ def getPosts(blog_id, username, password, filter={}):
 
 def newPost(blog_id, username, password, content):
     """
-    Parameters
-    int blog_id
-    string username
-    string password
-    struct content
-        string post_type
-        string post_status
-        string post_title
-        int post_author
-        string post_excerpt
-        string post_content
-        datetime post_date_gmt | post_date
-        string post_format
-        string post_name: Encoded URL (slug)
-        string post_password
-        string comment_status
-        string ping_status
-        int sticky
-        int post_thumbnail
-        int post_parent
-        array custom_fields
-            struct
-            string key
-            string value
-    struct terms: Taxonomy names as keys, array of term IDs as values.
-    struct terms_names: Taxonomy names as keys, array of term names as values.
-    struct enclosure
-        string url
-        int length
-        string type
-    any other fields supported by wp_insert_post    
-    
-    ## EXAMPLE FROM DeskPM 
-    
-    { 'post_format': 'text', 
-      'post_title': 'Test Post for desktop clients', 
-      'post_status': 'publish', 
-      'post_thumbnail': 0, 
-      'sticky': False, 
-      'post_content': '<p>This is a test post. </p><p>Go forth, and publish my good man...</p>', 
-      'terms_names': {'post_tag': []}, 
-      'comment_status': 'open'
-    }
-    
-    ## Full-Featured Example
-    
-    {   'post_format': 'text', 
-        'post_title': 'Full-featured Posts', 
-        'post_status': 'publish', 
-        'post_thumbnail': 0, 
-        'sticky': False, 
-        'post_content': "Fully Featured, With Pics & Stuff.\n\nMy, aren't **we** fancypants.", 
-        'terms_names': {'post_tag': ['tag']}, 
-        'comment_status': 'open'}
-    Return Values
-    string post_id
-    Errors
-    401
-    - If the user does not have the edit_posts cap for this post type.
-    - If user does not have permission to create post of the specified post_status.
-    - If post_author is different than the user's ID and the user does not have the edit_others_posts cap for this post type.
-    - If sticky is passed and user does not have permission to make the post sticky, regardless if sticky is set to 0, 1, false or true.
-    - If a taxonomy in terms or terms_names is not supported by this post type.
-    - If terms or terms_names is set but user does not have assign_terms cap.
-    - If an ambiguous term name is used in terms_names.
-    403
-    - If invalid post_type is specified.
-    - If an invalid term ID is specified in terms.
-    404
-    - If no author with that post_author ID exists.
-    - If no attachment with that post_thumbnail ID exists.
-    
+    creates a new post
+    returns the post's id
     """
-    
     logger.debug("%s.newPost entered" % __name__)
     logger.debug("user: %s" % str(username))
     logger.debug("blog_id: %s" % str(blog_id))
     logger.debug("content:\n%s" % str(content))
     
     user = get_user(username, password)
-    if blog_id == 0:
-        # no blog_id given, get the last one with posts by this 
-        # author
-        logger.debug("blog_id=0, lookding for posts")
-        blog = Post.objects.filter(author=user.author).order_by('-pub_date')[0].blog
-    else:
-        blog = Blog.objects.get(pk=blog_id)
-    
+    try:
+        blog = Blog.objects.get(id=blog_id)
+        if blog.owner != user:
+            raise Blog.DoesNotExist
+    except Blog.DoesNotExist:
+        logger.debug("invalid blog id, looking for posts")
+        blog = Blog.objects.filter(owner=user)[0]
+                
     check_perms(user, blog)
     logger.info("blog: %s" % str(blog))    
     pub_date = datetime.datetime.now()
@@ -503,7 +432,7 @@ def getCategories(blog_id, username, password):
 
     return res
 
-def getOptions(blog_id, username, password, options=[]):
+def getOptions(blog_id, username, password, options={}):
     """
     int blog_id
     string username
@@ -523,6 +452,12 @@ def getOptions(blog_id, username, password, options=[]):
     logger.debug("struct: %s" % options)
     user = get_user(username, password)
     blog = Blog.objects.get(pk=blog_id)
+    if blog.owner != user:
+        # seems to be a misbehavior in DeskPM
+        # get the user's own blog
+        logger.warn("Incorrect blog id passed, finding user's blog")
+        blog = Blog.objects.filter(owner=user)[0]
+        logger.debug("Using blog with id %s" % str(blog.id))
     check_perms(user, blog)
     admin_url = {
         'value': urlparse.urljoin(blog.get_url(), "admin"),
@@ -570,3 +505,20 @@ def getOptions(blog_id, username, password, options=[]):
     logger.debug("res: %s" % res)
     logger.info("Finished wp.getOptions")
     return res
+
+def newCategory(blog_id, username, password, struct):
+    """
+    
+    """
+    user = get_user(username, password)
+    blog = Blog.objects.get(id=blog_id)
+    check_perms(user, blog)
+    
+    c = Category(
+            title=struct['name'],
+            description=struct['description'],
+            blog=blog
+        )
+    c.save()
+    return c.id
+    
