@@ -36,6 +36,8 @@ from django.conf import settings
 from ..models import Tag, Post, Blog, Author, Category, FILTER_CHOICES
 from ..ping_modes import send_pings
 
+from .utils import get_user, is_user_blog
+
 logger = logging.getLogger(__name__)
 
 def getPost(post_id, username, password):
@@ -320,28 +322,6 @@ def getUsersBlogs(appkey, username, password):
     logger.debug(res)
     return res
 
-def get_user(username, apikey, blogid=None):
-    """
-    checks if a user is authorized to make this call
-    """
-    logger.debug("%s.get_user entered" % __name__)
-    logger.debug("user: %s" % username)
-    logger.debug("apikey: %s" % apikey)
-    try:
-        user = User.objects.get(**{'username':username})
-        print 20*"---"
-    except User.DoesNotExist:
-        raise Fault(LOGIN_ERROR, 'Username is incorrect.')
-    if not apikey == user.author.remote_access_key:
-        raise Fault(LOGIN_ERROR, 'Password is invalid.')
-    if not user.author.remote_access_enabled:
-        raise Fault(PERMISSION_DENIED, 'Remote access not enabled for this user.')
-    # if not author.is_staff or not author.is_active:
-    #    raise Fault(PERMISSION_DENIED, _('User account unavailable.'))
-    #        raise Fault(PERMISSION_DENIED, _('User cannot %s.') % permission)
-
-    return user
-    
 def setTags(post, struct, key="tags"):
     logger.debug( "%s.setTags entered" % __name__)
     tags = struct.get(key, None)
@@ -365,19 +345,6 @@ def setTags(post, struct, key="tags"):
     logger.debug("Post Tags: %s" % str(post.tags.all()))
     post.save()
     return True
-
-def is_user_blog(user, blogid):
-    """
-    checks if the blog in question belongs to the use
-    """
-    
-    blog = Blog.objects.get(pk=blogid)
-    
-    if blog.owner==user:
-        return True
-    else:
-        return False
-
 
 def post_struct(post):
     """ returns the meta-blah equiv of a post """

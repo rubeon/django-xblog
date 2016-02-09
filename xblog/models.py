@@ -408,7 +408,7 @@ class Post(models.Model):
         kwargs = {
             "year": self.pub_date.year,
         }
-        return reverse("year-archive", kwargs=kwargs)
+        return reverse("xblog:year-archive", kwargs=kwargs)
         
     def get_month_archive_url(self):
         # return self.pub_date.strftime(settings.SITE_URL +"blog/%Y/%b").lower()
@@ -417,7 +417,7 @@ class Post(models.Model):
             "year": self.pub_date.year,
             'month': self.pub_date.strftime("%b").lower(),
         }
-        return reverse("month-archive", kwargs=kwargs)
+        return reverse("xblog:month-archive", kwargs=kwargs)
         
         
     def get_day_archive_url(self):
@@ -428,7 +428,7 @@ class Post(models.Model):
             'day': self.pub_date.day,
 
         }
-        return reverse("day-archive", kwargs=kwargs)
+        return reverse("xblog:day-archive", kwargs=kwargs)
 
 
     def get_post_archive_url(self):
@@ -458,7 +458,7 @@ class Post(models.Model):
             'month': self.pub_date.strftime("%b").lower(),
             'day': self.pub_date.day,
         }
-        return reverse("post-detail", kwargs=kwargs)
+        return reverse("xblog:post-detail", kwargs=kwargs)
 
     def get_site_url(self):
         """
@@ -564,7 +564,7 @@ class Blog(models.Model):
         return "http://%s/" % self.site.domain
         
     def get_absolute_url(self):
-        return reverse('blog-detail', kwargs={'slug': self.slug})
+        return reverse('xblog:blog-detail', kwargs={'slug': self.slug})
     
     def save(self, *args, **kwargs):
         if not self.slug or self.slug=='':

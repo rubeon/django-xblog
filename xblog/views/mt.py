@@ -32,12 +32,24 @@ logger = logging.getLogger(__name__)
 LOGIN_ERROR = 801
 PERMISSION_DENIED = 803
 
-def publishPost(user, postid):
+from .utils import get_user
+
+def publishPost(postid, username, password):
     """
-    lies that it publishes the thing, mostly for compatibility
-    porpoises...
+    sets post status with id=postid to 'publish'
     """
-    return True
+    logger.debug("%s.publishPost entered" % __name__)
+    user = get_user(username, password)
+    logger.debug("got user %s" % user)
+    p = Post.objects.get(pk=postid)
+    logger.debug("got post %s" % p)    
+    if p.author.user != user and not user.is_superuser:
+        raise Fault(PERMISSION_DENIED, 'publishPost: Permission denied for %s on post %s' % (user, postid))
+    
+    # set status to Published
+    p.status = 'publish'
+    p.save()
+    return p.status=="publish"
 
 def getCategoryList(user, blogid):
     """ takes the blogid, and returns a list of categories"""
@@ -52,34 +64,23 @@ def getCategoryList(user, blogid):
     #     res.append(struct)
     return res
 
-def getPostCategories(user, postid):
+def getPostCategories(postid, username, password):
     """
     returns a list of categories for postid *postid*
     """
-    logger.debug( "mt_getPostCategories called...")
-    logger.warn("Categories no longer supported")
+    logger.debug( "%s.getPostCategories called..." % __name__ )
+    user = get_user(username, password)
+    post = Post.objects.get(pk=postid)
+    # print "Processing", p.categories.all()
     res = []
-    # try:
-    #     p = Post.objects.get(pk=postid)
-    #     # print "Processing", p.categories.all()
-    #     counter = 0
-    #     res = []
-    # 
-    #     
-    #     for c in p.categories.all():
-    #         # print "Got post category:", c
-    #         primary = False
-    #         if p.primary_category_name == c:
-    #             # print "%s is the primary category" % c
-    #             primary=True
-    #         res.append(
-    #             dict(categoryName=c.title, categoryId=str(c.id), isPrimary=primary)
-    #         )
-    # except:
-    #     import traceback
-    #     traceback.print_exc(sys.stderr)
-    #     res = None
-    # 
+    
+    for c in post.categories.all():
+        primary = False
+        if post.primary_category_name == c:
+            primary=True
+        res.append(
+            dict(categoryName=c.title, categoryId=str(c.id), isPrimary=primary)
+        )
     return res
 
 def supportedMethods(*args):
@@ -109,13 +110,12 @@ def setPostCategories(postid, username, password, cats=[]):
     mt version of setpostcats
     takes a primary as argument
     """
-    logger.debug( "mt_setPostCategories called...")
-    logger.info("Submitted with %s" % cats)
+    logger.debug( "%s.setPostCategories called..." % __name__)
+    logger.debug("Submitted with %s" % cats)
     user = get_user(username, password)
     post = Post.objects.get(pk=postid)
     if post.author.user != user:
-        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, post_id))
-        
+        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, post))
     logger.debug("Old cats: %s" % post.categories.all())
     post.categories.clear()
     catlist = []
@@ -128,27 +128,6 @@ def setPostCategories(postid, username, password, cats=[]):
         post.categories.add(category)
     logger.debug("New cats: %s" % post.categories.all())
     post.save()
-    logger.debug(" mt_setPostCategories Done.")
+    logger.debug("%s.setPostCategories Done." % __name__)
     return True
 
-def get_user(username, apikey, blogid=None):
-    """
-    checks if a user is authorized to make this call
-    """
-    logger.debug("%s.get_user entered" % __name__)
-    logger.debug("user: %s" % username)
-    logger.debug("apikey: %s" % apikey)
-    try:
-        user = User.objects.get(**{'username':username})
-        print 20*"---"
-    except User.DoesNotExist:
-        raise Fault(LOGIN_ERROR, 'Username is incorrect.')
-    if not apikey == user.author.remote_access_key:
-        raise Fault(LOGIN_ERROR, 'Password is invalid.')
-    if not user.author.remote_access_enabled:
-        raise Fault(PERMISSION_DENIED, 'Remote access not enabled for this user.')
-    # if not author.is_staff or not author.is_active:
-    #    raise Fault(PERMISSION_DENIED, _('User account unavailable.'))
-    #        raise Fault(PERMISSION_DENIED, _('User cannot %s.') % permission)
-
-    return user

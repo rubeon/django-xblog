@@ -98,8 +98,6 @@ class MtTestCase(TestCase):
         """
         Bring up the test environment
         """
-        print 50*"~"
-        print self
         # create our test user
         self.test_user1 = User.objects.create(
             username="test_user1", 
@@ -157,10 +155,18 @@ class MtTestCase(TestCase):
             title = "Test User 1 Post",
             body = "This is some stuff.\n\nSome stuff, you know.",
             blog = self.test_blog,
-            author = self.test_user1.author
+            author = self.test_user1.author,
+            status = 'publish'
         )
         self.post.save()
-    
+        
+        self.draft = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author,
+            status = 'draft'
+        )
     
         # enable remote access for test_user1
         self.test_user1.author.remote_access_enabled = True
@@ -180,7 +186,9 @@ class MtTestCase(TestCase):
         self.s = ServerProxy('http://localhost:8000/xmlrpc/', transport=TestTransport(), verbose=0)
 
     def test_mt_set_post_categories(self):
-        print "Testing mt.setPostCategories"
+        """
+        make sure that categories can be set
+        """
         postid = self.post.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
@@ -190,5 +198,37 @@ class MtTestCase(TestCase):
             'isPrimary': True
         },]
         res = self.s.mt.setPostCategories(postid, username, password, categories)
+        # smoke check
         self.assertTrue(res)
+        
+        p = self.post
+        
+        for category in categories:
+            c = Category.objects.get(pk=category['categoryId'])
+            self.assertIn(c, p.categories.all())
             
+            
+    
+    def test_mt_get_post_categories(self):
+        postid = self.post.id
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        
+        categories = self.s.mt.getPostCategories(postid, username, password)
+        
+
+        for category in categories:
+            c = Category.objects.get(pk=categories['categoryId'])
+            self.assertIn(c, p.categories.all())
+    
+    def test_mt_publish_post(self):
+        postid = self.draft.id
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        
+        self.assertTrue(self.draft.status=="draft")
+        res = self.s.mt.publishPost(postid, username, password)
+        self.assertTrue(res)
+        post = Post.objects.get(pk=postid)
+        self.assertTrue(post.status=='publish')
+        

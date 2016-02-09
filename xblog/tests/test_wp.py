@@ -218,7 +218,6 @@ class WpTestCase(TestCase):
         
         with self.assertRaises(Fault):
             res = self.s.wp.getPosts(blog_id, username, password, filter)
-            print res
         
     # wp.newPost
     def test_wp_newPost_own_blog(self):

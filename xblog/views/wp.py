@@ -24,6 +24,8 @@ from ..models import LinkCategory
 from ..models import Author
 from ..models import Tag
 
+from .utils import get_user
+
 try:
     from xmlrpc.client import Fault
     from xmlrpc.client import DateTime
@@ -74,27 +76,6 @@ def _setTags(post, struct, key="tags"):
 def _get_default_blog(user):
     blog = Post.objects.filter(author=user.author).order_by('-pub_date')[0].blog
     return blog
-
-def get_user(username, apikey, blogid=None):
-    """
-    checks if a user is authorized to make this call
-    """
-    logger.debug("%s.get_user entered" % __name__)
-    logger.debug("user: %s" % username)
-    logger.debug("apikey: %s" % apikey)
-    try:
-        user = User.objects.get(**{'username':username})
-    except User.DoesNotExist:
-        raise Fault(LOGIN_ERROR, 'Username is incorrect.')
-    if not apikey == user.author.remote_access_key:
-        raise Fault(LOGIN_ERROR, 'Password is invalid.')
-    if not user.author.remote_access_enabled:
-        raise Fault(PERMISSION_DENIED, 'Remote access not enabled for this user.')
-    # if not author.is_staff or not author.is_active:
-    #    raise Fault(PERMISSION_DENIED, _('User account unavailable.'))
-    #        raise Fault(PERMISSION_DENIED, _('User cannot %s.') % permission)
-
-    return user    
 
 def check_perms(user, obj):
     logger.debug("%s.check_perms entered" % __name__)

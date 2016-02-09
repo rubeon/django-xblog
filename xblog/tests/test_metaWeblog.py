@@ -481,7 +481,6 @@ class MetaWeblogTestCase(TestCase):
         new_content = post_content.copy()
         keywords = "One Tag, Two Tag, Red Tag, Blue Tag"
         new_content['mt_keywords']=keywords
-        print "XXX", new_content
         res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
         self.assertTrue(res)
         
@@ -489,9 +488,26 @@ class MetaWeblogTestCase(TestCase):
             t = Tag.objects.get(title__iexact=tag)
             self.assertIn(t, post.tags.all())
         
-    
-    # metaWeblog.getTemplate -- not WP-supported
-    # metaWeblog.setTemplate -- not WP-supported
-    
+    def test_twitter_post_from_ifttt(self):
+        """
+        This peters out for some reason with IFTTT <-> Twitter 
+        """
+        blogid = ''
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        struct =  {
+            'post_status': 'publish', 
+            'mt_keywords': ['IFTTT', 'Twitter'], 
+            'description': u'<blockquote class="twitter-tweet"><p lang="en" dir="ltr">The software development process<br><br>i can\u2019t fix this<br><br>*crisis of confidence*<br>*questions career*<br>*questions life*<br><br>oh it was a typo, cool</p>&mdash; I Am Devloper (@iamdevloper) <a href="https://twitter.com/iamdevloper/status/694848050796212224">February 3, 2016</a></blockquote>\n<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>', 
+            'categories': ['Status'], 
+            'title': u'RT @iamdevloper: The software development process i can\u2019t fix this *crisis of confidence* *questions career* *questions life* oh it was a typo, cool'
+        }
+        
+        res = self.s.metaWeblog.newPost(blogid, username, password, struct)
+        
+        p = Post.objects.get(pk=res)
+        self.assertEqual(p.title, struct['title'])
+        self.assertEqual(p.body, struct['description'])
+
     # metaWeblog.newMediaObject
 
