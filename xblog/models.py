@@ -387,11 +387,20 @@ class Post(models.Model):
             raise PermissionDenied
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
-            
+        
+        status_category = getattr(settings, "XBLOG_STATUS_CATEGORY_NAME")
+        # first save, so we can check the categories
+        super(self.__class__, self).save(*args, **kwargs)
+        for cat in self.categories.all():
+            if cat.title == status_category:
+                self.post_format = "status"
+                logger.info("%s|%s setting format to 'status'" % (self.id, self.title))
+    
         trunc = Truncator(filters.get(self.text_filter, convert_linebreaks)(self.body)).chars(50, html=True)
         logger.debug("Post.save ---")
         logger.debug(trunc)
         self.summary = trunc
+        # finally, save the whole thing
         super(self.__class__, self).save(*args, **kwargs)
         logger.debug("Post.save complete")
         
@@ -567,10 +576,12 @@ class Blog(models.Model):
         return reverse('xblog:blog-detail', kwargs={'slug': self.slug})
     
     def save(self, *args, **kwargs):
-        if not self.slug or self.slug=='':
-            self.slug = SlugifyUniquely(self.title, self.__class__)
-        
         logger.debug("%s.Blog.save entered %s" % (__name__, self.title))
+        if not self.slug or self.slug=='':
+            slug = SlugifyUniquely(self.title, self.__class__)
+            logger.debug("Slug not given, setting to %s" % slug)
+            self.slug = slug
+        
         super(self.__class__, self).save(*args, **kwargs)
         logger.debug("blog.save complete")
     

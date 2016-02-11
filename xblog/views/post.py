@@ -13,6 +13,7 @@ from django.http import Http404, HttpResponse
 from ..models import Post
 from ..models import Blog
 from ..models import Tag
+from ..forms import PostCreateForm
 
 from django.contrib.sites.models import Site
 import logging
@@ -27,30 +28,30 @@ def xhr_tags(request):
         data = serializers.serialize('json', res)
         return HttpResponse(data,'json')
 
-
-    
-
 class PostCreateView(SuccessMessageMixin, CreateView):
     """
     View for adding a post
     """
-    model = Post
-    fields = ['title', 'body', 'status', 'tags', 'text_filter', 'post_format', 'blog', 'categories']
-    success_url = reverse_lazy("site-overview")
+    # model = Post
+    # fields = ['title', 'body', 'status', 'tags', 'text_filter', 'post_format', 'blog', 'categories']
+    form_class = PostCreateForm
+    success_url = reverse_lazy("xblog:site-overview")
     success_message = "Post '%(title)s created!"
+    template_name = "xblog/post_form.html"
     
     def get_initial(self):
         """
         - sets the blog to be the most recently updated one
         """
+        logger.debug("%s.get_initial entered" % self)
         recent_posts = Post.objects.filter(author=self.request.user.author).order_by("-pub_date")
         if recent_posts:
-            res = recent_posts[0].blog
+            blog = recent_posts[0].blog
             text_filter = recent_posts[0].text_filter
         else:
-            res = None
+            blog = None
             text_filter = None
-        return {'blog':res, 'text_filter': text_filter, 'status': 'draft'}
+        return {'blog':blog, 'text_filter': text_filter, 'status': 'draft'}
     
     def form_valid(self, form):
         form.instance.author = self.request.user.author
@@ -62,7 +63,7 @@ class PostCreateView(SuccessMessageMixin, CreateView):
         return self.success_message % dict(cleaned_data)
         
     def get_success_url(self):
-        return reverse_lazy("site-overview")
+        return reverse_lazy("xblog:site-overview")
     
     
 class PostUpdateView(SuccessMessageMixin, UpdateView):
@@ -77,11 +78,11 @@ class PostUpdateView(SuccessMessageMixin, UpdateView):
         return self.success_message % dict(cleaned_data)
         
     def get_success_url(self):
-        return reverse_lazy("site-overview")
+        return reverse_lazy("xblog:site-overview")
     
 class PostDeleteView(SuccessMessageMixin, DeleteView):
     model = Post
-    success_url = reverse_lazy("site-overview")
+    success_url = reverse_lazy("xblog:site-overview")
     success_message = "Post '%(title)s deleted!"
 
     def get_success_message(self, cleaned_data):

@@ -1,7 +1,7 @@
 {% extends "xblog/post_archive.html" %}
 {% block extratitle %} {{ year.year }} {% endblock %}
 {% block blogheaders %}<meta name="description" content="{{ site.name }}: Yearly Archive for {{ year.year }} Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}" />{% endblock %}
-{% block yearnav %}
+{% block extranav %}
 <li>{{ year.year }}</li>
 {% endblock %}
 

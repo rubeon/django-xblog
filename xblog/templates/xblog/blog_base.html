@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% load  blog_tags %}
 {% load staticfiles %}
-{% load bootstrap3 %}
-
 {% block extrahead %}
 <link rel="alternate" href="{{ site.url }}" type="application/rss+xml" title="RSS 2.0" />
 <link rel="EditURI" href="{{ site.get_current_site.domain }}xmlrpc/" type="application/rsd+xml" title="RSD" />
@@ -17,22 +15,14 @@
 {% block navigation %}
     <li>Blog</li>
 {% endblock %}
-{% block yearnav %}
-...
-{% endblock %}
-
 <!-- main content -->
-{% block maincontent %}
-
-Main content goes here.
-
-{% endblock %}
+{% block maincontent %}{% endblock %}
 <!-- /main content -->
 
 {% block rightnav %}
 {% get_blogroll %}
 <div id="blogroll" class="sidebar-module">
-	<h3>Blogroll {% bootstrap_icon "rss" %}</h3>
+	<h3>Blogroll</h3>
 	{% for cat in blogroll_categories %}
 	<h4>{{ cat.title }}</h4>
 	<ul class="list-unstyled">{% for link in cat.link_set.all|dictsort:"link_name" %}
@@ -57,14 +47,14 @@ Main content goes here.
         {% if page_obj.has_previous %}
           <li>
               <a href="?page={{ page_obj.previous_page_number }}">
-              {% bootstrap_icon "circle-arrow-left" %} Previous
+              Previous
              </a>
           </li>
         {% endif %}
         {% if page_obj.has_next %}
           <li>
               <a href="?page={{ page_obj.next_page_number }}">
-                  Next {% bootstrap_icon "circle-arrow-right" %}
+                  Next
               </a>
           </li>
         {% endif %}

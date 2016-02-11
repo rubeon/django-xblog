@@ -3,13 +3,11 @@
 {% load markdown_deux_tags %}
 {% block extratitle %} {{ object.title }}{% endblock %}
 {% block blogheaders %}<meta name="description" value="{{ site.name }}: {{ object.title }}">{% endblock %}
-
-{% block yearnav %}<li><a href="../../../">{{object.pub_date|date:"Y"}}</a>{% endblock %}
-{% block monthnav %}<li><a href="../../">{{object.pub_date|date:"F"}}</a></li>{% endblock %}
-{% block daynav %}<li><a href="../">{{object.pub_date|date:"d"}}</a></li>{% endblock %}
-{% block extrarightnav %}
-	
-{% endblock %}	
+{% block extranav %}<li><a href="{% url "xblog:year-archive" year=object.pub_date|date:"Y" %}">{{ object.pub_date.year}}</a></li>
+<li><a href="{% url "xblog:month-archive" year=object.pub_date|date:"Y" month=object.pub_date|date:"b" %}">{{ object.pub_date|date:"F"}}</a></li>
+<li><a href="{% url "xblog:day-archive"  year=object.pub_date|date:"Y" month=object.pub_date|date:"b" day=object.pub_date.day %}">{{ object.pub_date.day}}</a></li>
+<li>{{ object.title }}</li>
+{% endblock %}
 {% block maincontent %}
 <!-- {{ object.post_format }} -->
 {% if object.post_format == 'video' %}

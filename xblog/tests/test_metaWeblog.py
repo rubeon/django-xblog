@@ -252,6 +252,23 @@ class MetaWeblogTestCase(TestCase):
         cats = Category.objects.filter(blog=self.test_blog, title="Status")
         self.assertTrue(len(cats) > 0)
     
+    def test_newPost_as_status(self):
+        """
+        When a post is created in the category "Status", or the category defined as
+        "XBLOG_STATUS_CATEGORY_NAME" in settings.py, mark this post format as status
+        """
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        blog = self.test_blog
+        new_content = post_content.copy()
+        new_content['categories'].append(getattr(settings, 'XBLOG_STATUS_CATEGORY_NAME', 'Status'))
+        # post = self.s.metaWeblog.getPost(res, username, password)
+        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, new_content)        
+        new_post = Post.objects.get(pk=res)
+        
+        self.assertEqual("status", new_post.post_format)
+
+    
     # metaWeblog.getPost
     def test_getPost_own_blog(self):
         appkey = 0

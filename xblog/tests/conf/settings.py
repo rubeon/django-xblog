@@ -44,3 +44,4 @@ TEMPLATES = [
     }
 ]
 
+XBLOG_STATUS_CATEGORY_NAME="tweets"

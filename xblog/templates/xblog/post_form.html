@@ -6,6 +6,7 @@
 <script type="text/javascript" src="{% static "js/bootstrap-tokenfield.js" %}"></script>
 <script type="text/javascript" src="{% static "js/typeahead/typeahead.jquery.js" %}"></script>
 <script type="text/javascript" src="{% static "js/typeahead/bloodhound.js" %}"></script>
+<script src="{% static "ckeditor/ckeditor.js" %}"></script>
 
 {% endblock %}
 
@@ -66,5 +67,7 @@ $('#tags').tokenfield({
 });
 </script>
 
+<script>
+	CKEDITOR.replace('id_body');
+</script>
 {% endblock %}
-

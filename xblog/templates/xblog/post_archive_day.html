@@ -1,9 +1,11 @@
 {% extends "xblog/post_archive.html" %}
 {% block extratitle %} {{day|date:"Y / F / j" }}{% endblock %}
-{% block yearnav %}<li><a href="{% url "year-archive" year=day|date:"Y" %}">{{ day.year}}</a></li>{% endblock %}
-{% block monthnav %}<li><a href="{% url "month-archive" year=day|date:"Y" month=day|date:"b" %}">{{ day|date:"F"}}</a></li>{% endblock %}
+{% block extranav %}<li><a href="{% url "xblog:year-archive" year=day|date:"Y" %}">{{ day.year}}</a></li>
+<li><a href="{% url "xblog:month-archive" year=day|date:"Y" month=day|date:"b" %}">{{ day|date:"F"}}</a></li>
+<li>{{ day.day}}</li>
+{% endblock %}
 {% block blogheaders %}<meta name="description" content="{{ site.name }}: Daily Archive {{ day|date:"j F Y"}} Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}"/>{% endblock %}
-{% block daynav %}<li>{{ day.day}}</li>{% endblock %}
+
 {% block maincontent %}
     <h3>{{ day }}</h3>
 	{% for object in object_list reversed %}
