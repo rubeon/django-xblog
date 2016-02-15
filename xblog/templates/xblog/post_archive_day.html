@@ -10,7 +10,15 @@
     <h3>{{ day }}</h3>
 	{% for object in object_list reversed %}
 	<!-- links for day -->
-    {% include "includes/post_template.txt" %}
+{% if object.post_format == 'video' %}
+<!-- a video! -->
+{% include "includes/video_template.txt" %}
+{% elif object.post_format == 'status' %}
+{% include "includes/status_template.txt" %}
+{% else %}
+<!-- it's a post!  -->
+{% include "includes/post_template.txt" %}
+{% endif %}
 	{% endfor %}    
       {% block pager %}
       <!-- post_archive.html -->

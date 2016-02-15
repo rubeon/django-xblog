@@ -12,17 +12,12 @@
 <!-- {{ object.post_format }} -->
 {% if object.post_format == 'video' %}
 <!-- a video! -->
-{% include "includes/post_video.txt" %}
+{% include "includes/video_template.txt" %}
+{% elif object.post_format == 'status' %}
+{% include "includes/status_template.txt" %}
 {% else %}
 <!-- it's a post!  -->
 {% include "includes/post_template.txt" %}
 {% endif %}
 <!-- includes -->
-	{% for pb in object.pingback_set.all %}
-	{% ifchanged %}<h3>Pingbacks</h3>
-		<a id="pingbacks"></a>{% endifchanged %}
-		<div class="comment">
-			<span class="comnum"><a href="{{pb.source_url}}">{{ pb.title }}</a>&rarr;<a href="{{ pb.target_url }}"></a></span>
-		</div><!-- /comment -->
-	{% endfor %}
 {% endblock %}

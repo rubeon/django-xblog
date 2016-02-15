@@ -1,16 +1,24 @@
 {% extends "xblog/blog_base.html" %}
 {% load markdown_deux_tags %}
 {% load bootstrap3 %}
+
 {% block blogheaders %}<meta name="description" content="{{ site.name }} Archive: Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}" />{% endblock %}
 {% block maincontent %}
 	<!-- begin main blog overview -->
-	{% for object in latest %}
-    <div class="post-preview">
-    {% include "includes/post_template.txt" %}
-    </div>
-	{% endfor %}
-	<!-- end main blog overview -->
-          
+{% if object.post_format == 'video' %}
+<!-- a video! -->
+{% include "includes/video_template.txt" %}
+{% elif object.post_format == 'status' %}
+{% include "includes/status_template.txt" %}
+{% else %}
+{% for object in latest %}
+{% include "includes/post_template.txt" %}
+{% endfor %}
+{% endif %}
+<!-- end main blog overview -->
+
+
+
 {% endblock %}
 <!-- numreplies -->
 <!-- /numreplies -->

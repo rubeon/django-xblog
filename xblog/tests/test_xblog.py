@@ -21,10 +21,10 @@ class PostTestCase(TestCase):
         """
         Create the test objects
         """
-        
+
         # create our test user
         User.objects.create(
-            username="test_user1", 
+            username="test_user1",
             first_name="Test",
             last_name="User2",
             email="testuser@example.com",
@@ -32,10 +32,10 @@ class PostTestCase(TestCase):
             is_staff=False,
             is_superuser=False
         )
-        
+
         #
         User.objects.create(
-            username="test_user2", 
+            username="test_user2",
             first_name="Test",
             last_name="User2",
             email="testuser2@example.com",
@@ -44,7 +44,7 @@ class PostTestCase(TestCase):
             is_superuser=False
         )
         User.objects.create(
-            username="admin", 
+            username="admin",
             first_name="Admin",
             last_name="User",
             email="admin@example.com",
@@ -52,14 +52,14 @@ class PostTestCase(TestCase):
             is_staff=True,
             is_superuser=True
         )
-        
+
         Blog.objects.create(
             title="Test User 1's Space",
             description="A blog for Test User 1.  Slippery when wet!",
             owner = User.objects.get(username="test_user1"),
             site = Site.objects.get_current()
         )
-        
+
     def test_create_posts_own_blog(self):
         test_user1 = User.objects.get(username='test_user1')
         Post.objects.create(
@@ -97,8 +97,8 @@ class PostTestCase(TestCase):
         # get user's blog
         blog = Blog.objects.get(owner=test_user1)
         self.assertEqual(test_user1.author, blog.owner.author)
-    
-    
+
+
     def test_post_with_utf8(self):
         test_user1 = User.objects.get(username='test_user1')
         Post.objects.create(
@@ -138,8 +138,8 @@ class PostTestCase(TestCase):
             text_filter = 'html'
         )
         self.assertEquals(body, p.get_full_body())
-        
-    
+
+
     def test_post_text_filter_markdown(self):
         """
         HTML filter should return the raw text, more or less
@@ -156,8 +156,10 @@ class PostTestCase(TestCase):
         )
         # make sure link is working
         self.assertIn("<a href=\"http://www.example.com/\">Link text</a>", p.get_full_body())
-        
+
         # check for footnotes
         self.assertIn('footnoteBackLink', p.get_full_body())
+
+
+    def test_post_absolute_url(self):
         
-    

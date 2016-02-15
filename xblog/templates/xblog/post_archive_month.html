@@ -11,7 +11,15 @@
 <h3><a href="{{ object.pub_date.day }}">{{ object.pub_date|date:"j F Y"}}</a></h3>
 {% endifchanged %}
 <!-- a post -->
+{% if object.post_format == 'video' %}
+<!-- a video! -->
+{% include "includes/video_template.txt" %}
+{% elif object.post_format == 'status' %}
+{% include "includes/status_template.txt" %}
+{% else %}
+<!-- it's a post!  -->
 {% include "includes/post_template.txt" %}
+{% endif %}
 <!-- /a post -->
 {% endfor %}
 {% endblock %}

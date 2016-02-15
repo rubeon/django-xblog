@@ -13,6 +13,15 @@
 {% block maincontent %}
 <form action="" method="post" accept-charset="utf-8">
 	{% csrf_token %}
+	
+    <fieldset class="form-group">
+      <label for="id_title">Post Title</label>
+      <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Enter email">
+      <small class="text-muted">We'll never share your email with anyone else.</small>
+    </fieldset>
+	
+	
+	
     {% bootstrap_form form %}
     {% buttons %}
         <button type="submit" class="btn btn-primary">

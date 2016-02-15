@@ -1,6 +1,6 @@
 from django.db import models
 from django.template.defaultfilters import slugify
-# from django.contrib.auth.models import User 
+# from django.contrib.auth.models import User
 from django.core.mail import mail_managers, send_mail
 from django.core.exceptions import PermissionDenied
 from django.core.validators import MinLengthValidator
@@ -23,7 +23,7 @@ try:
     from django.contrib.auth import get_user_model
     User = settings.AUTH_USER_MODEL
 except ImportError:
-    from django.contrib.auth.models import User 
+    from django.contrib.auth.models import User
 
 def create_profile(sender, **kwargs):
     user = kwargs["instance"]
@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 
 def random_string(length=24):
     """
-    generates a random string of characters for 
+    generates a random string of characters for
     an API key, for example.
     """
     # create a pool of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -72,7 +72,7 @@ def random_string(length=24):
     # next time...
     res = "".join([pool[ord(c) % len(pool)] for c in os.urandom(length)])
     return res
-    
+
 STATUS_CHOICES=(('draft','Draft'),('publish','Published'),('private','Private'))
 FORMAT_CHOICES=(('standard', 'Standard'), ('video', 'Video'), ('status','Status'),)
 # text filters
@@ -84,7 +84,7 @@ FILTER_CHOICES=(
 
 filters={}
 def get_markdown(data):
-    # m = Markdown(data, 
+    # m = Markdown(data,
     #                  extensions=['footnotes'],
     #                  # extension_configs= {'footnotes' : ('PLACE_MARKER','~~~~~~~~')},
     #                  encoding='utf8',
@@ -96,7 +96,7 @@ def get_markdown(data):
     res = markdown2.markdown(data, extras=['footnotes','fenced-code-blocks','smartypants'])
     # logger.debug("res: %s" % res)
     return res
-    
+
 filters['markdown']=get_markdown
 
 def get_html(data):
@@ -138,7 +138,7 @@ class LinkCategory(models.Model):
     visible = models.BooleanField(default=True)
     blog = models.ForeignKey('Blog')
     display_order = models.IntegerField(blank=True, null=True)
-    
+
     # Admin moved to admin.py
     #class Admin:
     #    list_display = ('title',)
@@ -157,35 +157,35 @@ class Link(models.Model):
     link_image = models.ImageField(upload_to="blog_uploads/links/", height_field='link_image_height', width_field='link_image_width',blank=True)
     link_image_height = models.IntegerField(blank=True, null=True)
     link_image_width = models.IntegerField(blank=True, null=True)
-    
+
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
     blog = models.ForeignKey('Blog')
     rss = models.URLField(blank=True)
-    
+
     category = models.ForeignKey('LinkCategory')
-    
+
     def __str__(self):
         return "%s (%s)" % (self.link_name, self.url)
-    
+
     __repr__=__str__
 
 @python_2_unicode_compatible
 class Pingback(models.Model):
     """ Replies are either pingbacks """
-    
+
     author_name = models.CharField(blank=True, max_length=100)
     author_email = models.EmailField(blank=True)
     post = models.ForeignKey('Post')
     title = models.CharField(blank=True, max_length=255)
     body = models.TextField(blank=True)
     is_public = models.BooleanField(default=False)
-    
+
     source_url = models.URLField(blank=True)
     target_url = models.URLField(blank=True)
     pub_date = models.DateTimeField(blank=True, default=django.utils.timezone.now)
     mod_date = models.DateTimeField(blank=True, default=django.utils.timezone.now)
-    
+
     def __str__(self):
         return "Reply %s -> %s" % (self.source_url,self.target_url)
 
@@ -196,18 +196,18 @@ class Pingback(models.Model):
         logger.debug("Pingback.save() entered: %s" % self)
         super(self.__class__, self).save(*args, **kwargs)
         mail_subject = "New Pingback from %s" % self.title.strip()
-        mail_body = """        
-        
+        mail_body = """
+
 Source URL: %s
 Target URL: %s
       Time: %s
             """ % (self.source_url, self.target_url, self.pub_date)
-            
+
         logger.debug(mail_subject)
         logger.debug(mail_body)
         # mail_managers(mail_subject, mail_body, fail_silently=False)
         send_mail(mail_subject, mail_body, "eric@xoffender.de", [self.post.author.email])
-        
+
 class Tag(models.Model):
     """(Tag description)"""
     title = models.CharField(blank=True, max_length=100)
@@ -230,7 +230,7 @@ class Author(models.Model):
     # API-related stuff
     remote_access_enabled = models.BooleanField(default=False)
     remote_access_key = models.CharField(blank=True, max_length=100, validators=[MinLengthValidator(8)])
-    
+
     def get_avatar_url(self):
         logger.debug("%s: %s" % (self, "Getting avatar url"))
         return self.avatar.url
@@ -243,15 +243,15 @@ class Author(models.Model):
             if self.remote_access_enabled:
                 if not self.remote_access_key:
                     self.remote_access_key=random_string()
-        
+
         super(self.__class__, self).save(*args, **kwargs)
-        
+
     def __str__(self):
         if self.fullname == '':
             return str(self.user)
         else:
             return self.fullname
-        
+
 class Category(models.Model):
     """
     Keeps track of post categories
@@ -260,45 +260,45 @@ class Category(models.Model):
     description = models.CharField(blank=True, max_length=100)
     blog = models.ForeignKey("Blog")
     slug = models.SlugField(max_length=100)
-    
+
     def __unicode__(self):
         return self.title
-    
+
     def get_absolute_url(self, absolute=False):
         """
         setting absolute will prepened host's URL
         """
-        
+
         local_url = urlparse.urljoin(self.blog.get_absolute_url(),self.slug)
         # dumb
         if local_url[-1]!="/":
             local_url = local_url + "/"
-        
+
         if absolute:
-            return "http://%s" % self.blog.site.domain + local_url 
+            return "http://%s" % self.blog.site.domain + local_url
         else:
             return local_url
-            
+
     def save(self, *args, **kwargs):
-        
+
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
-            
+
         logger.debug("%s.Category.save entered %s" % (__name__, self.title))
         super(self.__class__, self).save(*args, **kwargs)
         logger.debug("category.save complete")
-        
-        
+
+
 
 @python_2_unicode_compatible
 class Post(models.Model):
     """A Blog Entry, natch"""
     # metadata
     pub_date = models.DateTimeField(blank=True, default=django.utils.timezone.now)
-    update_date = models.DateTimeField(blank=True, auto_now=True) 
+    update_date = models.DateTimeField(blank=True, auto_now=True)
     create_date = models.DateTimeField(blank=True, auto_now_add=True)
     enable_comments = models.BooleanField(default=True)
-    # post content 
+    # post content
     title = models.CharField(blank=False, max_length=255)
     slug = models.SlugField(max_length=100)
     # adding, because it's a good idea (mainly for importing!)
@@ -319,19 +319,19 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
-        
+
     def comment_period_open(self):
         """ determines if a post is too old..."""
         # uncomment rest of line to set limit at 30 days.
         # Sometimes I get hits on older entries, so I'll leave this one for now.
         return self.enable_comments # and datetime.datetime.today() - datetime.timedelta(30) <= self.pub_date
-        
-    
+
+
     def prepopulate(self):
         logger.debug("prepopulate entered for %s" % self)
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
-            
+
         if not self.summary or self.summary == '':
             # do an auto-summarize here.
             # now what could that be?
@@ -359,7 +359,7 @@ class Post(models.Model):
             if "http://www.technorati.com/tag/" in a.get('href'):
                 # seems to be taggy
                 tags.append(a.string)
-                
+
         logger.debug("Tags: %s" % str(tags))
         taglist = []
         for tag in tags:
@@ -374,10 +374,10 @@ class Post(models.Model):
                 t.save()
 
             taglist.append(t)
-        
+
         self.tags = taglist
 
-            
+
     def save(self, *args, **kwargs):
         logger.debug("Post.save entered for %s" % self)
         # make sure that person is allowed to create posts in this blog
@@ -387,15 +387,15 @@ class Post(models.Model):
             raise PermissionDenied
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
-        
-        status_category = getattr(settings, "XBLOG_STATUS_CATEGORY_NAME")
+
+        status_category = getattr(settings, "XBLOG_STATUS_CATEGORY_NAME", "Status")
         # first save, so we can check the categories
         super(self.__class__, self).save(*args, **kwargs)
         for cat in self.categories.all():
             if cat.title == status_category:
                 self.post_format = "status"
                 logger.info("%s|%s setting format to 'status'" % (self.id, self.title))
-    
+
         trunc = Truncator(filters.get(self.text_filter, convert_linebreaks)(self.body)).chars(50, html=True)
         logger.debug("Post.save ---")
         logger.debug(trunc)
@@ -403,22 +403,22 @@ class Post(models.Model):
         # finally, save the whole thing
         super(self.__class__, self).save(*args, **kwargs)
         logger.debug("Post.save complete")
-        
+
     def get_archive_url(self):
         # returns the path in archive
         logger.debug("get_archive_url entered for %s" % self)
         archive_url = "%s/%s" % (self.blog.get_url(), "blog/archive/")
         # archive_url = settings.SITE_URL + "blog/archive/"
         return archive_url
-        
+
     def get_year_archive_url(self):
         # return self.pub_date.strftime( settings.SITE_URL + "blog/%Y/").lower()
         logger.debug("get_year_archive_url entered for %s" % self)
         kwargs = {
             "year": self.pub_date.year,
         }
-        return reverse("xblog:year-archive", kwargs=kwargs)
-        
+        return reverse("year-archive", kwargs=kwargs)
+
     def get_month_archive_url(self):
         # return self.pub_date.strftime(settings.SITE_URL +"blog/%Y/%b").lower()
         logger.debug("get_month_archive_url entered for %s" % self)
@@ -426,9 +426,9 @@ class Post(models.Model):
             "year": self.pub_date.year,
             'month': self.pub_date.strftime("%b").lower(),
         }
-        return reverse("xblog:month-archive", kwargs=kwargs)
-        
-        
+        return reverse("month-archive", kwargs=kwargs)
+
+
     def get_day_archive_url(self):
         # return self.pub_date.strftime(settings.SITE_URL +"blog/%Y/%b/%d").lower()
         kwargs = {
@@ -437,19 +437,19 @@ class Post(models.Model):
             'day': self.pub_date.day,
 
         }
-        return reverse("xblog:day-archive", kwargs=kwargs)
+        return reverse("day-archive", kwargs=kwargs)
 
 
     def get_post_archive_url(self):
-        return self.get_absolute_url()  
-        
+        return self.get_absolute_url()
+
     def get_trackback_url(self):
         # returns url for trackback pings.
         # return self.get_absolute_url() + "trackback/"
         # return "".join([settings.SITE_URL,, str(self.id)]) + "/"
         # return settings.SITE_URL + self.get_absolute_url()[1:] + "trackback/"
         return urlparse.urljoin(self.get_absolute_uri(), "trackback/")
-    
+
     def get_absolute_uri(self):
         # returns a url for the interweb
         uri = urlparse.urljoin(self.blog.get_url(), self.get_absolute_url())
@@ -457,7 +457,7 @@ class Post(models.Model):
 
     # will standardize on this in the future
     get_url = get_absolute_uri
-    
+
     def get_absolute_url(self):
         logger.debug("get_absolute_url entered for %s" % self)
         logger.debug("post_format: %s" % self.post_format)
@@ -467,7 +467,7 @@ class Post(models.Model):
             'month': self.pub_date.strftime("%b").lower(),
             'day': self.pub_date.day,
         }
-        return reverse("xblog:post-detail", kwargs=kwargs)
+        return reverse("post-detail", kwargs=kwargs)
 
     def get_site_url(self):
         """
@@ -476,23 +476,23 @@ class Post(models.Model):
         """
         datestr = self.pub_date.strftime("%Y/%b/%d")
         return "/".join(['/blog', datestr.lower(), self.slug]) + "/"
-        
-    
+
+
     def get_full_body(self):
         """ same as get_formatted_body, but removes <-- more --> tags."""
         b = self.body.replace('<!--more-->','')
         textproc = filters.get(self.text_filter, convert_linebreaks)
         b = textproc(b)
         return b
-        
+
     # newness
     # what's this?
     get_full_body.allow_tags = True
-    
+
     @property
     def full_body(self):
         return self.get_full_body()
-    
+
     def get_formatted_body(self, split=True):
         """ returns the formatted version of the body text"""
         logger.debug("get_formatted_body entered for %s" % self)
@@ -504,13 +504,13 @@ class Post(models.Model):
         else:
             b = self.body
             splitted = False
-        
+
         textproc = filters.get(self.text_filter, convert_linebreaks)
         b = textproc(b)
         if splitted:
             b += """<p><a href="%s">Continue reading "%s"</p>""" % (self.get_absolute_url(), self.title)
         return b
-    
+
     def get_video_body(self):
         """
         if this is a video post, reformat it to embed the video instead of showing the URL
@@ -529,10 +529,10 @@ class Post(models.Model):
             else:
                 return "<b>Unsupported Video...</b>"
 
-        
+
     # newness?
     get_formatted_body.allow_tags = True
-            
+
     def get_fuzzy_pub_date(self):
         logger.debug("get_fuzzy_pub_date entered for %s" % self)
         h = self.pub_date.hour
@@ -542,16 +542,16 @@ class Post(models.Model):
         fc.setMinute(m)
         res =  string.capwords(fc.getFuzzyTime())
         return res
-        
+
     def get_pingback_count(self):
         logger.debug("get_pingback_count entered for %s" % self)
         return len(self.pingback_set.all())
-        
+
     def get_readability(self):
         logger.debug("get_readability entered for %s" % self)
         my_readability = text_stats.calculate_readability(self)
         return my_readability
-        
+
 class Blog(models.Model):
     """ For different blogs..."""
     title = models.CharField(blank=True, max_length=100)
@@ -571,21 +571,21 @@ class Blog(models.Model):
         # return reverse("archive-index")
         # return "http://127.0.0.1:8000/blog/"
         return "http://%s/" % self.site.domain
-        
+
     def get_absolute_url(self):
-        return reverse('xblog:blog-detail', kwargs={'slug': self.slug})
-    
+        return reverse('blog-detail', kwargs={'slug': self.slug})
+
     def save(self, *args, **kwargs):
         logger.debug("%s.Blog.save entered %s" % (__name__, self.title))
         if not self.slug or self.slug=='':
             slug = SlugifyUniquely(self.title, self.__class__)
             logger.debug("Slug not given, setting to %s" % slug)
             self.slug = slug
-        
+
         super(self.__class__, self).save(*args, **kwargs)
         logger.debug("blog.save complete")
-    
-        
+
+
 class PostForm(ModelForm):
     """
     Django form-based class for editing posts.
@@ -597,7 +597,7 @@ class PostForm(ModelForm):
         readonly_fields = ('create_date',)
         fields = ['title', 'body', 'author', 'status', 'tags', 'text_filter', 'blog',  'guid']
 
-        
+
 #class PodcastChannel(models.Model):
 #    """ model for the podcast, sorta like a blog..."""
 #    title = models.CharField(blank=True, max_length=200)
@@ -616,12 +616,12 @@ class PostForm(ModelForm):
 #    image = models.ImageField(upload_to=os.path.join(settings.MEDIA_ROOT,'blog_uploads','podcasts'), height_field='image_height', width_field='image_width', blank=True)
 #    image_height = models.IntegerField(blank=True, null=True)
 #    image_width = models.IntegerField(blank=True, null=True)
-#    
-#    
+#
+#
 #    class Admin:
 #        pass
-#        
-#        
+#
+#
 #    def __str__(self):
 #        return "Podcast Channel: %s" % self.title
 #
@@ -633,7 +633,7 @@ class PostForm(ModelForm):
 #    subtitle = models.TextField(blank=True)
 #    summary = models.TextField(blank=True)
 #    slug = models.SlugField(prepopulate_from=("title",))
-#    
+#
 #    link = models.URLField(blank=True, verify_exists=False)
 #    guid = models.URLField(blank=True, verify_exists=False)
 #    description = models.TextField(blank=True)
@@ -641,7 +641,7 @@ class PostForm(ModelForm):
 #    author = models.ForeignKey(Author)
 #    explicit = models.BooleanField(default=False)
 #    enclosure = models.FileField(upload_to=os.path.join('blog_uploads','podcasts/') )
-#    
+#
 #    pubdate = models.DateTimeField(blank=True, default=datetime.datetime.now())
 #    # pub_date = pubdate
 #    def get_enclosure_length(self):
@@ -651,13 +651,13 @@ class PostForm(ModelForm):
 #        s = os.stat(os.path.join(settings.MEDIA_ROOT,self.enclosure))
 #        # print s[stat.ST_SIZE]
 #        return s[stat.ST_SIZE]
-#    
+#
 #    def get_enclosure_mime_type(self):
 #        # print "Guessing mime type"
 #        res =  guess_type(self.enclosure)[0]
 #        print "Guessed '%s'" % res
 #        return res
-#    
+#
 #    class Admin:
 #        #list_display = ('',)
 #        #search_fields = ('',)
@@ -669,6 +669,6 @@ class PostForm(ModelForm):
 #    def delete(self):
 #        if os.path.exists(self.enclosure):
 #            os.unlink(self.enclosure)
-#        
+#
 #        super(Podcast,self).delete()
-#        
+#

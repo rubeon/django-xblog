@@ -7,7 +7,15 @@
 <p>{{ category.description }}</p>
 
 {% for object in object_list %}
+{% if object.post_format == 'video' %}
+<!-- a video! -->
+{% include "includes/video_template.txt" %}
+{% elif object.post_format == 'status' %}
+{% include "includes/status_template.txt" %}
+{% else %}
+<!-- it's a post!  -->
 {% include "includes/post_template.txt" %}
+{% endif %}
 {% endfor %}
 
 {% endblock %}
