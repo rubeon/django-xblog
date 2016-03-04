@@ -1,4 +1,4 @@
-Django
+django
 html2text
 BeautifulSoup
 django-markdown-deux
