@@ -7,9 +7,14 @@ Created by Eric Williams on 2007-02-23.
 """
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
-
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
-from xblog.models import Post, Blog
+
+from .models import Post
+from .models import Blog
+
+
+
 from django.conf import settings
 import datetime
 import logging
@@ -106,38 +111,66 @@ except ImportError:
     #    return obj.get_absolute_url()
         
 
-class Posts(Feed):
-  """
-  Yet another try to get my crappy, crappy feeds to work correctly.
-  """
-  feed_type = Atom1Feed
-  title = "You Bitch! || Posts"  
-  link = "/"
-  description = "RSS Feed for YouBitch.org"
-  # item_pubdate = datetime.datetime(2005, 5, 3)  
-  def items(self):
-    return Post.objects.order_by("-pub_date").filter(status="publish")[:10]
-  
-  def item_pubdate(self, item):
-    """
-    Takes an item, as returned by items(), and returns the item's
-    pubdate.
-    """
-    logger.debug("entered item_pubdate") 
-    return item.pub_date
+# class Posts(Feed):
+#   """
+#   Yet another try to get my crappy, crappy feeds to work correctly.
+#   """
+#   feed_type = Atom1Feed
+#   title = "You Bitch! || Posts"
+#   link = "/"
+#   description = "RSS Feed for YouBitch.org"
+#   # item_pubdate = datetime.datetime(2005, 5, 3)
+#   def items(self):
+#     return Post.objects.order_by("-pub_date").filter(status="publish")[:10]
+#
+#   def item_pubdate(self, item):
+#     """
+#     Takes an item, as returned by items(), and returns the item's
+#     pubdate.
+#     """
+#     logger.debug("entered item_pubdate")
+#     return item.pub_date
+#
+#
+#   def author_name(self, obj):
+#       try:
+#           return obj.author.first_name
+#       except Exception, e:
+#           logger.debug("Doh! %s" % e)
+#           import sys, traceback
+#           logger.warn("Exception in user code:")
+#           logger.warn(str(type(obj)))
+#           return "Unknown"
+#
 
-
-  def author_name(self, obj):
-      try:
-          return obj.author.first_name
-      except Exception, e:
-          logger.debug("Doh! %s" % e)
-          import sys, traceback
-          logger.warn("Exception in user code:")
-          logger.warn(str(type(obj)))
-          return "Unknown"
+class LatestPostsFeed(Feed):
+    title = "Latest Posts"
+    link = reverse_lazy("site-overview")
+    description = "Latests Posts"
+    
+    def items(self):
+        return Post.objects.filter(status="publish").order_by("-pub_date")
+    
+    def item_title(self, item):
+        return item.title
+    
+    def item_description(self, item):
+        return item.get_full_body()
+        
+    def item_link(self, item):
+        return item.get_absolute_url()
+        
+    def item_author_name(self, item):
+        return item.author.fullname
     
     
+    
+class AtomLatestPostsFeed(LatestPostsFeed):    
+    feed_type = Atom1Feed
+    subtitle = LatestPostsFeed.description
+
+
+
 if __name__ == '__main__':
     main()
 

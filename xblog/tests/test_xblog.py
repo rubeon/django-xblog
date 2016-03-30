@@ -161,5 +161,4 @@ class PostTestCase(TestCase):
         self.assertIn('footnoteBackLink', p.get_full_body())
 
 
-    def test_post_absolute_url(self):
-        
+    

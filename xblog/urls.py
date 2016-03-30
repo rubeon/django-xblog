@@ -39,7 +39,7 @@ from .views.post import PostUpdateView
 from .views.post import PostDeleteView
 from .views.post import xhr_tags
 
-
+from .feeds import LatestPostsFeed
 
 year_archive_pattern =r'^(?P<year>[0-9]{4})/$'
 month_archive_pattern=r'^(?P<year>\d{4})/(?P<month>\w{3})/$'
@@ -106,6 +106,7 @@ urlpatterns = [
     #     name='archive-index',  ),
     url(r'^(?P<owner>\w+)/(?P<year>[0-9]{4})/$', PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH)),
     url(r'^tags/$', xhr_tags),
+    url(r'^feed/$', LatestPostsFeed(), name="feed-posts"),
     url(r'^$', PostArchiveIndexView.as_view(model=Post,
         date_field="pub_date",
         paginate_by=PAGE_LENGTH,
