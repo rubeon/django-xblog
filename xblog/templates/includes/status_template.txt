@@ -1,0 +1,3 @@
+<blockquote>
+{{ object.full_body|safe }}
+</blockquote>
