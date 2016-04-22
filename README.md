@@ -1,9 +1,13 @@
 # django-xblog
 Blogging application for your Django site
 
+## Build Status
+
+[![Build Status](https://drone.io/github.com/rubeon/django-xblog/status.png)](https://drone.io/github.com/rubeon/django-xblog/latest)
+
 ## Installation
 
-From github: 
+From github:
 
 ```bash
 
@@ -63,7 +67,7 @@ Add a place to your site's root `urls.py` reach your blog:
 
 ```python
     import xblog.urls
-    
+
     urlpatterns = [
         url(r'^admin/', admin.site.urls),
         url(r'^blog/', xblog.urls),
@@ -114,7 +118,7 @@ XBlog defines the following content blocks:
 
 	<title>subcritical.org::{% block subpagetitle %}top{% endblock %}</title>
 	{% block extrahead %}{% endblock %}
-	
+
 * `navigation` - Can be pulled into your navigation block to allow blog-specific navigation elements:
 
 ```html
