@@ -60,6 +60,21 @@ class PostTestCase(TestCase):
             site = Site.objects.get_current()
         )
 
+        LinkCategory.objects.create(
+            title = 'Great Links',
+            description = 'The Best Links in the Webz',
+            visible = True,
+            blog = Blog.objects.all()[0]
+        )
+
+        Link.objects.create(
+            url='http://google.com',
+            description = 'The Overmind',
+            link_name = 'The Google',
+            category = LinkCategory.objects.all()[0],
+            blog = Blog.objects.all()[0]
+        )
+
     def test_create_posts_own_blog(self):
         test_user1 = User.objects.get(username='test_user1')
         Post.objects.create(
@@ -97,6 +112,21 @@ class PostTestCase(TestCase):
         # get user's blog
         blog = Blog.objects.get(owner=test_user1)
         self.assertEqual(test_user1.author, blog.owner.author)
+
+    def test_existing_user_can_be_saved(self):
+        """
+        If a user gets changed, changes should be saved.
+        Also test that the Author attached to it remains
+        intact.
+        """
+        test_user1 = User.objects.get(username='test_user1')
+        blog = Blog.objects.get(owner=test_user1)
+        new_last_name = "OMG MY LAST NAME CHANGED"
+
+        # change the user
+        test_user1.last_name = new_last_name
+        test_user1.save()
+        self.assertEqual(test_user1.last_name, new_last_name)
 
 
     def test_post_with_utf8(self):
@@ -159,3 +189,27 @@ class PostTestCase(TestCase):
 
         # check for footnotes
         self.assertIn('footnoteBackLink', p.get_full_body())
+
+    def test_link_string_reps(self):
+        """
+        Make sure that Link returns its title when printed
+        """
+        link = Link.objects.all()[0]
+        self.assertEqual("%s (%s)" % (link.link_name, link.url), str(link))
+
+    def test_link_category_string_reps(self):
+        """
+        Test that the link printing returns expected results (and won't crash)
+        """
+        link_category = LinkCategory.objects.all()[0]
+        self.assertEqual(link_category.title, str(link_category))
+
+    def test_pingback_create(self):
+        """
+        Makes sure the pingback functionality is working...
+        This should optimally use the local server and not ping somebody
+        everytime it runs a test :-/
+        """
+        pass
+
+    

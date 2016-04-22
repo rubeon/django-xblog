@@ -46,15 +46,15 @@ def create_profile(*args, **kwargs):
     """
     LOGGER.debug(str(args))
     user = kwargs["instance"]
-    if kwargs["created"]:
-        # check if the profile already exists
-        if hasattr(user, 'author'):
-            return
-        else:
-            userprofile = Author(user=user)
-            userprofile.save()
+    # if kwargs["created"]:
+    #     # check if the profile already exists
+    if hasattr(user, 'author'):
+        LOGGER.info('Author profile exists, skipping')
+        return
+    else:
+        userprofile = Author(user=user)
+        userprofile.save()
 
-# weird.
 post_save.connect(create_profile, sender=settings.AUTH_USER_MODEL)
 
 def random_string(length=24):
@@ -125,22 +125,6 @@ def convert_linebreaks(data):
 FILTERS['convert linebreaks'] = convert_linebreaks
 FILTERS['__default__'] = get_markdown
 
-def xmlify(data):
-    """
-    can replace invalid ascii values with the xml entities.
-    will be removed, because it's crap.
-    """
-    LOGGER.debug("xmlify entered")
-    return data
-    # replaced = False
-    # for let in data:
-    #     # fix non-unicodies.
-    #     if ord(let) > 127:
-    #         replaced = True
-    #         LOGGER.info("Replacing %s -> &%d;" % (let, ord(let)))
-    #         data = data.replace(let, "&#%d;" % ord(let))
-    # return data
-
 @python_2_unicode_compatible
 class LinkCategory(models.Model):
     """Categories for  the blogroll"""
@@ -198,9 +182,8 @@ class Pingback(models.Model):
     def __str__(self):
         return "Reply %s -> %s" % (self.source_url, self.target_url)
 
-    def __repr__(self):
-        return "%s (%s - %s)" % (self.title, self.source_url, self.target_url)
-
+    __unicode__ = __str__
+    
     def save(self, *args, **kwargs):
         """
         save override.
