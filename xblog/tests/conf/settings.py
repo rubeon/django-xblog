@@ -15,7 +15,7 @@ INSTALLED_APPS = [
     'markdown_deux',
     'django_xmlrpc'
 ]
-
+DEBUG=True
 SITE_ID=1
 ROOT_URLCONF = 'xblog.tests.conf.urls'
 
@@ -45,3 +45,45 @@ TEMPLATES = [
 ]
 
 XBLOG_STATUS_CATEGORY_NAME="tweets"
+
+LOGGING = {
+    'version': 1,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+            },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'file.log',
+            'formatter': 'simple'
+            },
+        },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'WARN',
+            'propagate': True,
+            },
+        'xblog': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propogate': True,
+        }
+        }
+    }
+
+if DEBUG:
+    # make all loggers use the console.
+    for logger in LOGGING['loggers']:
+        LOGGING['loggers'][logger]['handlers'] = ['console']

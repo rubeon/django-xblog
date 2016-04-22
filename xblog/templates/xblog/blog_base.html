@@ -2,10 +2,10 @@
 {% load  blog_tags %}
 {% load staticfiles %}
 {% block extrahead %}
-<link rel="alternate" href="{{ site.url }}" type="application/rss+xml" title="RSS 2.0" />
-<link rel="EditURI" href="{{ site.get_current_site.domain }}xmlrpc/" type="application/rsd+xml" title="RSD" />
-<link rel="archives" href="{{  request.build_absolute_uri }}archive/" title="Archives" charset="utf-8" />
-<link rel="pingback" href="{{ site.url }}xmlrpc/" />
+<link rel="alternate" href="https://{{ site.domain }}{% url 'feed-posts' %}" type="application/rss+xml" title="RSS 2.0" />
+<link rel="EditURI" href="https://{{ site.domain }}{% url 'xmlrpc' %}" type="application/rsd+xml" title="RSD" />
+<link rel="archives" href="https://{{ site.domain }}{% url 'site-overview' %}/" title="Archives" charset="utf-8" />
+<link rel="pingback" href="https://{{ site.domain }}{% url 'xmlrpc' %}" />
 <link rel="stylesheet" type="text/css" href="{% static "pygments-css/zenburn.css" %}">
 {% block blogheaders %}<meta name="description" content="{{ site.name }}" />{% endblock %}
 {% endblock %}
@@ -21,8 +21,7 @@
 
 {% block rightnav %}
 {% get_blogroll %}
-<div id="blogroll" class="sidebar-module">
-	<h3>Blogroll</h3>
+
 	{% for cat in blogroll_categories %}
 	<h4>{{ cat.title }}</h4>
 	<ul class="list-unstyled">{% for link in cat.link_set.all|dictsort:"link_name" %}
@@ -36,8 +35,8 @@
 	{% ifchanged %}{% if not forloop.first %}<br />{% endif %}<span class="blogrollheader"><a href="/blog/{{month.year}}">{{month|date:"Y"|lower}}</a></span><br />{% endifchanged %}
 		<a href="/blog/{{ month|date:"Y/M"|lower }}/" title="{{ month|date:"M Y" }}">{{ month|date:"M" }}</a>
 		{% ifequal month.month 6  %}<br />{% endifequal %}{% endfor %}
-	</div><!-- /blogroll -->
-    
+    <!-- /blogroll -->
+
 {% endblock %}
 
 {% block pager %}
@@ -61,4 +60,3 @@
         </ul>
       </nav>
 {% endblock %}
-

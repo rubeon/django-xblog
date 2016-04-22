@@ -17,6 +17,9 @@ from django.forms import ModelForm
 
 from django.db.models.signals import post_save
 
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
+
 import urlparse
 
 try:
@@ -388,14 +391,6 @@ class Post(models.Model):
         if not self.slug or self.slug=='':
             self.slug = SlugifyUniquely(self.title, self.__class__)
 
-        status_category = getattr(settings, "XBLOG_STATUS_CATEGORY_NAME", "Status")
-        # first save, so we can check the categories
-        super(self.__class__, self).save(*args, **kwargs)
-        for cat in self.categories.all():
-            if cat.title == status_category:
-                self.post_format = "status"
-                logger.info("%s|%s setting format to 'status'" % (self.id, self.title))
-
         trunc = Truncator(filters.get(self.text_filter, convert_linebreaks)(self.body)).chars(50, html=True)
         logger.debug("Post.save ---")
         logger.debug(trunc)
@@ -467,7 +462,7 @@ class Post(models.Model):
             'month': self.pub_date.strftime("%b").lower(),
             'day': self.pub_date.day,
         }
-        return reverse("post-detail", kwargs=kwargs)
+        return reverse("xblog:post-detail", kwargs=kwargs)
 
     def get_site_url(self):
         """
@@ -573,7 +568,7 @@ class Blog(models.Model):
         return "http://%s/" % self.site.domain
 
     def get_absolute_url(self):
-        return reverse('blog-detail', kwargs={'slug': self.slug})
+        return reverse('xblog:blog-detail', kwargs={'slug': self.slug})
 
     def save(self, *args, **kwargs):
         logger.debug("%s.Blog.save entered %s" % (__name__, self.title))
@@ -597,78 +592,37 @@ class PostForm(ModelForm):
         readonly_fields = ('create_date',)
         fields = ['title', 'body', 'author', 'status', 'tags', 'text_filter', 'blog',  'guid']
 
-
-#class PodcastChannel(models.Model):
-#    """ model for the podcast, sorta like a blog..."""
-#    title = models.CharField(blank=True, max_length=200)
-#    slug = models.SlugField(prepopulate_from=("title",))
-#    description = models.TextField(blank=True)
-#    link = models.URLField(blank=True, verify_exists=False)
-#    language = models.TextField(blank=True, default="en-us")
-#    copyright = models.TextField(blank=True)
-#    # lastBuildDate = models.DateTimeField(blank=True, default=datetime.datetime.now())
-#    # lastPubDate = models.DateTimeField(blank=True, default=datetime.datetime.new())
-#    # author = models.CharField(blank=True, max_length=100)
-#    subtitle = models.TextField(blank=True)
-#    summary = models.TextField(blank=True)
-#    owner = models.ForeignKey(Author)
-#    explicit = models.BooleanField(default=False)
-#    image = models.ImageField(upload_to=os.path.join(settings.MEDIA_ROOT,'blog_uploads','podcasts'), height_field='image_height', width_field='image_width', blank=True)
-#    image_height = models.IntegerField(blank=True, null=True)
-#    image_width = models.IntegerField(blank=True, null=True)
-#
-#
-#    class Admin:
-#        pass
-#
-#
-#    def __str__(self):
-#        return "Podcast Channel: %s" % self.title
-#
-#class Podcast(models.Model):
-#    """A Podcast episode"""
-#    channel = models.ForeignKey(PodcastChannel)
-#   #  categories = models.ManyToManyField(Category)
-#    title = models.CharField(blank=True, max_length=200)
-#    subtitle = models.TextField(blank=True)
-#    summary = models.TextField(blank=True)
-#    slug = models.SlugField(prepopulate_from=("title",))
-#
-#    link = models.URLField(blank=True, verify_exists=False)
-#    guid = models.URLField(blank=True, verify_exists=False)
-#    description = models.TextField(blank=True)
-#    url = models.URLField(blank=True, verify_exists=False)
-#    author = models.ForeignKey(Author)
-#    explicit = models.BooleanField(default=False)
-#    enclosure = models.FileField(upload_to=os.path.join('blog_uploads','podcasts/') )
-#
-#    pubdate = models.DateTimeField(blank=True, default=datetime.datetime.now())
-#    # pub_date = pubdate
-#    def get_enclosure_length(self):
-#        # print "Getting enclosure length"
-#        import stat
-#        # returns the length of the podcast
-#        s = os.stat(os.path.join(settings.MEDIA_ROOT,self.enclosure))
-#        # print s[stat.ST_SIZE]
-#        return s[stat.ST_SIZE]
-#
-#    def get_enclosure_mime_type(self):
-#        # print "Guessing mime type"
-#        res =  guess_type(self.enclosure)[0]
-#        print "Guessed '%s'" % res
-#        return res
-#
-#    class Admin:
-#        #list_display = ('',)
-#        #search_fields = ('',)
-#        pass
-#
-#    def __str__(self):
-#        return "Podcast: %s" % self.title
-#
-#    def delete(self):
-#        if os.path.exists(self.enclosure):
-#            os.unlink(self.enclosure)
-#
-#        super(Podcast,self).delete()
-#
+@receiver(m2m_changed, sender=Post.categories.through)
+def check_status_category(sender, **kwargs):
+    """
+    Checks to see if this is a status-style post, and changes the post type
+    accordingly
+    """
+    logger.debug('XXcheck_status_category entered')
+    logger.debug(sender)
+    instance = kwargs.pop('instance', None)
+    action = kwargs.pop('action', None)
+    pk_set = kwargs.pop('pk_set', None)
+    logger.debug('XXpk_set:' + str(pk_set))
+    status_category = getattr(settings, "XBLOG_STATUS_CATEGORY_NAME", "Status")
+    # try to get the status category...
+    try:
+        status_cat = Category.objects.get(title=status_category)
+        logger.debug(status_category +" XXX FOUND")
+    except Category.DoesNotExist:
+        logger.debug(status_category +" XX NOT FOUND")
+        return
+    logger.debug('XXXcheck_status_category:' + status_cat.title)
+    # first save, so we can check the categories
+    logger.debug('XXXnotq id:' + str(status_cat.id))
+    logger.debug('XXXnotq pk_set:' + str(pk_set))
+    logger.debug('XXXnotq action: ' + str(action))
+    if action == "post_add":
+        if status_cat.id in pk_set:
+            logger.debug('XXXcat:' + status_cat.title)
+            instance.post_format = "status"
+            # logger.info("XX:%s|%s setting format to 'status'" % (instance.id, instance.title))
+            # sender.save()
+            instance.save()
+        else:
+            pass

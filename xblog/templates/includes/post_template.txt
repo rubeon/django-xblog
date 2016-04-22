@@ -1,33 +1,12 @@
 {% load static %}
 {% load bootstrap3 %}
-{% comment %}
-<article>
-{% if object.post_format in 'status' %}
-<!-- status type posts are not displayed with title -->
-{% else %}
-    <h3 class="post-title">
-      <a href="{{ object.get_absolute_url }}">
-        {{ object.title }}
-      </a>
-    </h3>
-{% endif %}
+<div id="id{{ object.pk }}">
+<div data-sticky-container>
+		<div class="sticky header" data-sticky data-anchor="id{{ object.pk }}" data-margin-top="3">
+		<h3>{{ object.title }}</h3>
+		</div>
+</div>
+    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 
-    <h6><a href="{{ object.get_absolute_url }}" rel="bookmark"><time class="entry-date published" datetime="{{ object.pub_date }}">{{ object.pub_date|date:"j F, Y"}}</a> by <a href="{% url "xblog:author-detail" username=object.author.user.username %}">{{ object.author.fullname }}</a></h6>
-      {{ object.get_full_body|safe }}      
-</article>
-{% endcomment %}
-<article>
-	<header>
-		<h3><a href="{{ object.get_absolute_url }}">{{ object.title}}</a></h3>
-	</header>
-	{{ object.full_body|safe }}
-	<footer>
-		<p>Posted by {{ object.author.fullname }}</p>
-		{% if object.tags.count %}
-		<p>Tags: 
-			{% for tag in object.tags.all %}<span class="badge"><a href="{{ tag.get_absolute_url }}">{{ tag.title }}</a></span>{% endfor %}
-		{% endif %}
-		</p>
-		<p><small>{{ object.pub_date|date:"j F, Y" }}</small></p>
-	</footer>
-</article>
+</div>

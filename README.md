@@ -79,3 +79,51 @@ XBlog uses the Django authentication framework to keep track of users.  Users ar
 
 
 ````
+
+
+## Adding to your templates
+
+XBlog defines the following content blocks:
+
+* `maincontent` - the main Blog content with archives, posts, etc.
+
+* `rightnav` - Blog roll, archive links, etc.
+
+* `leftnav` - navigation block including ...(FIXME: whut?)
+
+* `extrahead` - adds meta tags depending on the content being shown:
+
+```html
+<title>subcritical.org::{% block subpagetitle %}top{% endblock %}</title>
+{% block extrahead %}{% endblock %}
+```
+
+* `subpagetitle` - returns title of article or archive
+
+```html
+<title>subcritical.org::{% block subpagetitle %}top{% endblock %}</title>
+```
+
+* `pagestyle` - can be placed in `body` tag for CSS styling:
+
+```html
+<body class="{% block pagestyle}{% endblock %}">
+```
+
+* `blogheaders` - Returns metadata about blog, such as EditURI, author, etc., for you HTML `<head>` section
+
+	<title>subcritical.org::{% block subpagetitle %}top{% endblock %}</title>
+	{% block extrahead %}{% endblock %}
+	
+* `navigation` - Can be pulled into your navigation block to allow blog-specific navigation elements:
+
+```html
+
+<nav>
+	<ul>
+	  <li>Top</li>
+    	{% block navigation %}{% endblock %}
+	</ul>
+</nav>
+
+```
