@@ -17,7 +17,7 @@ from xblog.models import Category
 from xblog.models import Link
 from xblog.models import Tag
 from xblog.models import LinkCategory
-from xblog.models import filters
+from xblog.models import FILTERS
 
 
 import six
@@ -41,7 +41,7 @@ except ImportError:  # Python 2
     from urlparse import parse_qs
     from urlparse import urlparse
     from xmlrpclib import Transport
-from datetime import datetime 
+from datetime import datetime
 
 
 class TestTransport(Transport):
@@ -62,7 +62,7 @@ class TestTransport(Transport):
         setattr(res, 'getheader', lambda *args: '')  # For Python >= 2.7
         res.seek(0)
         return self.parse_response(res)
-        
+
 post_content = {
     'title':'This is a test title',
     'description': "<p>This is the post content.  Hey-ooooo!</p>",
@@ -85,7 +85,7 @@ post_content = {
     'custom_fields':[],
     'enclosure':{},
 }
-        
+
 @override_settings(
     ROOT_URLCONF='xblog.tests.conf.urls'
 )
@@ -100,7 +100,7 @@ class MtTestCase(TestCase):
         """
         # create our test user
         self.test_user1 = User.objects.create(
-            username="test_user1", 
+            username="test_user1",
             first_name="Test",
             last_name="User2",
             email="testuser@example.com",
@@ -108,10 +108,10 @@ class MtTestCase(TestCase):
             is_staff=False,
             is_superuser=False
         )
-    
+
         #
         self.test_user2 = User.objects.create(
-            username="test_user2", 
+            username="test_user2",
             first_name="Test",
             last_name="User2",
             email="testuser2@example.com",
@@ -120,7 +120,7 @@ class MtTestCase(TestCase):
             is_superuser=False
         )
         self.rogue_user = User.objects.create(
-            username="rogue_user", 
+            username="rogue_user",
             first_name="Rogue",
             last_name="User",
             email="testuser2@example.com",
@@ -129,7 +129,7 @@ class MtTestCase(TestCase):
             is_superuser=False
         )
         self.test_admin = User.objects.create(
-            username="admin", 
+            username="admin",
             first_name="Admin",
             last_name="User",
             email="admin@example.com",
@@ -137,20 +137,20 @@ class MtTestCase(TestCase):
             is_staff=True,
             is_superuser=True
         )
-    
+
         self.test_blog = Blog.objects.create(
             title="Test User 1's Space",
             description="A blog for Test User 1.  Slippery when wet!",
             owner = User.objects.get(username="test_user1"),
             site = Site.objects.get_current()
         )
-    
+
         self.test_category1 = Category.objects.create(
             title="Test Category 1",
             description="Category mean namely for testing",
             blog = self.test_blog
         )
-    
+
         self.post = Post.objects.create(
             title = "Test User 1 Post",
             body = "This is some stuff.\n\nSome stuff, you know.",
@@ -159,7 +159,7 @@ class MtTestCase(TestCase):
             status = 'publish'
         )
         self.post.save()
-        
+
         self.draft = Post.objects.create(
             title = "Test User 1 Post",
             body = "This is some stuff.\n\nSome stuff, you know.",
@@ -167,22 +167,22 @@ class MtTestCase(TestCase):
             author = self.test_user1.author,
             status = 'draft'
         )
-    
+
         # enable remote access for test_user1
         self.test_user1.author.remote_access_enabled = True
         self.test_user1.author.save()
-    
+
         # disable remote access for test_user2
         self.test_user2.author.remote_access_enabled = False
         self.test_user2.author.save()
-    
+
         self.rogue_user.author.remote_access_enabled = True
         self.rogue_user.author.save()
-    
+
         self.test_admin.author.remote_access_enabled = True
         self.test_admin.author.save()
-    
-    
+
+
         self.s = ServerProxy('http://localhost:8000/xmlrpc/', transport=TestTransport(), verbose=0)
 
     def test_mt_set_post_categories(self):
@@ -200,35 +200,34 @@ class MtTestCase(TestCase):
         res = self.s.mt.setPostCategories(postid, username, password, categories)
         # smoke check
         self.assertTrue(res)
-        
+
         p = self.post
-        
+
         for category in categories:
             c = Category.objects.get(pk=category['categoryId'])
             self.assertIn(c, p.categories.all())
-            
-            
-    
+
+
+
     def test_mt_get_post_categories(self):
         postid = self.post.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        
+
         categories = self.s.mt.getPostCategories(postid, username, password)
-        
+
 
         for category in categories:
             c = Category.objects.get(pk=categories['categoryId'])
             self.assertIn(c, p.categories.all())
-    
+
     def test_mt_publish_post(self):
         postid = self.draft.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        
+
         self.assertTrue(self.draft.status=="draft")
         res = self.s.mt.publishPost(postid, username, password)
         self.assertTrue(res)
         post = Post.objects.get(pk=postid)
         self.assertTrue(post.status=='publish')
-        

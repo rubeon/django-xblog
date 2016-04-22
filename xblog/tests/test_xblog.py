@@ -10,7 +10,7 @@ from xblog.models import Author
 from xblog.models import Category
 from xblog.models import Link
 from xblog.models import LinkCategory
-from xblog.models import filters
+from xblog.models import FILTERS
 
 import os
 
@@ -109,11 +109,11 @@ class PostTestCase(TestCase):
         )
 
     def test_post_text_filter_smoketest(self):
-        # makes sure the filters are all 'working'
+        # makes sure the FILTERS are all 'working'
         source_file = os.path.join(BASE_DIR, "resources/test_post.html")
         test_user1 = User.objects.get(username='test_user1')
         body = open(source_file).read()
-        for filter in filters.keys():
+        for filter in FILTERS.keys():
             p = Post.objects.create(
                 title = "Test Text",
                 body = body,
@@ -121,7 +121,7 @@ class PostTestCase(TestCase):
                 author = test_user1.author,
                 text_filter = filter
             )
-            self.assertEquals(p.get_full_body(), filters[filter](body))
+            self.assertEquals(p.get_full_body(), FILTERS[filter](body))
 
     def test_post_text_filter_html(self):
         """
@@ -159,6 +159,3 @@ class PostTestCase(TestCase):
 
         # check for footnotes
         self.assertIn('footnoteBackLink', p.get_full_body())
-
-
-    

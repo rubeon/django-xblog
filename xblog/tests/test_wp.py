@@ -14,7 +14,7 @@ from xblog.models import Category
 from xblog.models import Link
 from xblog.models import LinkCategory
 from xblog.models import Tag
-from xblog.models import filters
+from xblog.models import FILTERS
 
 
 
@@ -38,7 +38,7 @@ except ImportError:  # Python 2
     from urlparse import parse_qs
     from urlparse import urlparse
     from xmlrpclib import Transport
-from datetime import datetime 
+from datetime import datetime
 
 class TestTransport(Transport):
     """
@@ -102,7 +102,7 @@ class WpTestCase(TestCase):
         """
         # create our test user
         self.test_user1 = User.objects.create(
-            username="test_user1", 
+            username="test_user1",
             first_name="Test",
             last_name="User2",
             email="testuser@example.com",
@@ -110,10 +110,10 @@ class WpTestCase(TestCase):
             is_staff=False,
             is_superuser=False
         )
-    
+
         #
         self.test_user2 = User.objects.create(
-            username="test_user2", 
+            username="test_user2",
             first_name="Test",
             last_name="User2",
             email="testuser2@example.com",
@@ -122,7 +122,7 @@ class WpTestCase(TestCase):
             is_superuser=False
         )
         self.rogue_user = User.objects.create(
-            username="rogue_user", 
+            username="rogue_user",
             first_name="Rogue",
             last_name="User",
             email="testuser2@example.com",
@@ -131,7 +131,7 @@ class WpTestCase(TestCase):
             is_superuser=False
         )
         self.test_admin = User.objects.create(
-            username="admin", 
+            username="admin",
             first_name="Admin",
             last_name="User",
             email="admin@example.com",
@@ -139,20 +139,20 @@ class WpTestCase(TestCase):
             is_staff=True,
             is_superuser=True
         )
-    
+
         self.test_blog = Blog.objects.create(
             title="Test User 1's Space",
             description="A blog for Test User 1.  Slippery when wet!",
             owner = User.objects.get(username="test_user1"),
             site = Site.objects.get_current()
         )
-    
+
         self.test_category1 = Category.objects.create(
             title="Test Category 1",
             description="Category mean namely for testing",
             blog = self.test_blog
         )
-    
+
         self.post = Post.objects.create(
             title = "Test User 1 Post",
             body = "This is some stuff.\n\nSome stuff, you know.",
@@ -160,23 +160,23 @@ class WpTestCase(TestCase):
             author = self.test_user1.author
         )
         self.post.save()
-    
-    
+
+
         # enable remote access for test_user1
         self.test_user1.author.remote_access_enabled = True
         self.test_user1.author.save()
-    
+
         # disable remote access for test_user2
         self.test_user2.author.remote_access_enabled = False
         self.test_user2.author.save()
-    
+
         self.rogue_user.author.remote_access_enabled = True
         self.rogue_user.author.save()
-    
+
         self.test_admin.author.remote_access_enabled = True
         self.test_admin.author.save()
-    
-    
+
+
         self.s = ServerProxy('http://localhost:8000/xmlrpc/', transport=TestTransport(), verbose=0)
 
     # Posts
@@ -187,7 +187,7 @@ class WpTestCase(TestCase):
         password = self.test_user1.author.remote_access_key
         post_id = self.post.id
         res = self.s.wp.getPost(blog_id, username, password, post_id)
-    
+
     def test_wp_getPost_others_post(self):
         blog_id = self.test_blog.id
         username = self.rogue_user.username
@@ -202,7 +202,7 @@ class WpTestCase(TestCase):
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         filter = {}
-        
+
         res = self.s.wp.getPosts(blog_id, username, password, filter)
         # make sure it's the correct set
         for post in res:
@@ -215,10 +215,10 @@ class WpTestCase(TestCase):
         username = self.rogue_user.username
         password = self.rogue_user.author.remote_access_key
         filter = {}
-        
+
         with self.assertRaises(Fault):
             res = self.s.wp.getPosts(blog_id, username, password, filter)
-        
+
     # wp.newPost
     def test_wp_newPost_own_blog(self):
         """
@@ -227,21 +227,21 @@ class WpTestCase(TestCase):
         blog_id = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        
+
         new_content = content.copy()
-        
+
         new_content['author_id'] = self.test_user1.id
-        
+
         res = self.s.wp.newPost(blog_id, username, password, content)
-        
+
         # make sure it got made
-        
+
         new_post = Post.objects.get(id=res)
-        
+
         self.assertEqual(str(blog_id), str(new_post.blog.id))
         self.assertEqual(new_post.author.user, self.test_user1)
-        
-        
+
+
     def test_wp_new_category_own_blog(self):
         """
         creates a new category, makes sure it takes
@@ -249,40 +249,40 @@ class WpTestCase(TestCase):
         blog_id = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        
+
         new_cat = {
             'name': 'New Category',
             'parent_id': 0,
             'description': 'A great category for stuff!'
         }
-        
+
         res = self.s.wp.newCategory(blog_id, username, password, new_cat)
-        
+
         # get the created Category
-        
+
         c = Category.objects.get(pk=res)
         blog = Blog.objects.get(pk=blog_id)
         self.assertEqual(c.title, new_cat['name'])
         self.assertEqual(c.description, new_cat['description'])
         self.assertEqual(c.blog, blog)
-        
+
     def test_wp_get_options_own_blog(self):
         blog_id = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        
+
         struct = {}
-        
+
         res = self.s.wp.getOptions(blog_id, username, password, struct)
-        
+
     # wp.editPost
     # wp.deletePost
     # wp.getPostType
     # wp.getPostTypes
     # wp.getPostFormats
     # wp.getPostStatusList
-    
-    
+
+
     # Taxonomies (for categories, tags, and custom taxonomies) - Added in WordPress 3.4
     # wp.getTaxonomy
     # def test_wp_getTaxonomy_own_blog(self):
@@ -291,15 +291,15 @@ class WpTestCase(TestCase):
     #     password = self.test_user1.author.remote_access_key
     #     for taxonomy in ['category', 'link_category','post_format', 'post_tag']:
     #         res = self.s.wp.getTaxonomy(blog_id, username, password, taxonomy)
-    # 
+    #
     # # wp.getTaxonomies
     # def test_wp_getTaxonomies(self):
     #     blog_id = self.test_blog.id
     #     username = self.test_user1.username
     #     password = self.test_user1.author.remote_access_key
     #     res = self.s.wp.getTaxonomies(blog_id, username, password)
-    #     
-    
+    #
+
     # wp.getTerm
     # wp.getTerms
     # wp.newTerm
@@ -330,4 +330,3 @@ class WpTestCase(TestCase):
     # wp.getProfile (3.5)
     # wp.editProfile (3.5)
     # wp.getAuthors
-

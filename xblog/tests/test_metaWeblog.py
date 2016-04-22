@@ -18,7 +18,7 @@ from xblog.models import Category
 from xblog.models import Link
 from xblog.models import Tag
 from xblog.models import LinkCategory
-from xblog.models import filters
+from xblog.models import FILTERS
 
 """Test cases for XBlog's MetaWeblog API"""
 
@@ -43,7 +43,7 @@ except ImportError:  # Python 2
     from urlparse import parse_qs
     from urlparse import urlparse
     from xmlrpclib import Transport
-from datetime import datetime 
+from datetime import datetime
 
 
 class TestTransport(Transport):
@@ -97,7 +97,7 @@ post_content = {
     'custom_fields':[],
     'enclosure':{},
 }
-        
+
 
 
 
@@ -108,14 +108,14 @@ class MetaWeblogTestCase(TestCase):
     """
     MetaWeblog API tests
     """
-    
+
     def setUp(self):
         """
         Bring up the test environment
         """
         # create our test user
         self.test_user1 = User.objects.create(
-            username="test_user1", 
+            username="test_user1",
             first_name="Test",
             last_name="User2",
             email="testuser@example.com",
@@ -123,10 +123,10 @@ class MetaWeblogTestCase(TestCase):
             is_staff=False,
             is_superuser=False
         )
-        
+
         #
         self.test_user2 = User.objects.create(
-            username="test_user2", 
+            username="test_user2",
             first_name="Test",
             last_name="User2",
             email="testuser2@example.com",
@@ -135,7 +135,7 @@ class MetaWeblogTestCase(TestCase):
             is_superuser=False
         )
         self.rogue_user = User.objects.create(
-            username="rogue_user", 
+            username="rogue_user",
             first_name="Rogue",
             last_name="User",
             email="testuser2@example.com",
@@ -144,7 +144,7 @@ class MetaWeblogTestCase(TestCase):
             is_superuser=False
         )
         self.test_admin = User.objects.create(
-            username="admin", 
+            username="admin",
             first_name="Admin",
             last_name="User",
             email="admin@example.com",
@@ -152,20 +152,20 @@ class MetaWeblogTestCase(TestCase):
             is_staff=True,
             is_superuser=True
         )
-        
+
         self.test_blog = Blog.objects.create(
             title="Test User 1's Space",
             description="A blog for Test User 1.  Slippery when wet!",
             owner = User.objects.get(username="test_user1"),
             site = Site.objects.get_current()
         )
-        
+
         self.test_category1 = Category.objects.create(
             title="Test Category 1",
             description="Category mean namely for testing",
             blog = self.test_blog
         )
-        
+
         self.post = Post.objects.create(
             title = "Test User 1 Post",
             body = "This is some stuff.\n\nSome stuff, you know.",
@@ -173,25 +173,25 @@ class MetaWeblogTestCase(TestCase):
             author = self.test_user1.author
         )
         self.post.save()
-        
-        
+
+
         # enable remote access for test_user1
         self.test_user1.author.remote_access_enabled = True
         self.test_user1.author.save()
-        
+
         # disable remote access for test_user2
         self.test_user2.author.remote_access_enabled = False
         self.test_user2.author.save()
-        
+
         self.rogue_user.author.remote_access_enabled = True
         self.rogue_user.author.save()
-        
+
         self.test_admin.author.remote_access_enabled = True
         self.test_admin.author.save()
-        
-        
+
+
         self.s = ServerProxy('http://localhost:8000/xmlrpc/', transport=TestTransport(), verbose=0)
-        
+
     def test_getApiKey(self):
         """
         make sure he's gets an API key assigned
@@ -200,7 +200,7 @@ class MetaWeblogTestCase(TestCase):
         self.test_user1.author.save()
         self.assertTrue(len(self.test_user1.author.remote_access_key)>1)
 
-    # metaWeblog.getUsersBlogs    
+    # metaWeblog.getUsersBlogs
     def test_getUsersBlogs_correct_blogs(self):
         """
         see if the blogs are properly returned
@@ -208,9 +208,9 @@ class MetaWeblogTestCase(TestCase):
         appkey = 0
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        
+
         res = self.s.metaWeblog.getUsersBlogs(appkey, username, password)
-        
+
         for blog in res:
             b = Blog.objects.get(id=blog['blogid'])
             self.assertEqual(self.test_user1, b.owner)
@@ -223,7 +223,7 @@ class MetaWeblogTestCase(TestCase):
         blog = self.test_blog
         res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
         self.assertEqual(type(1), type(int(res)))
-    
+
     def test_newPost_nown_blog_tags(self):
         appkey = 0
         username = self.test_user1.username
@@ -235,7 +235,7 @@ class MetaWeblogTestCase(TestCase):
         for tag in post_content['mt_keywords']:
             t = Tag.objects.get(title=tag)
             self.assertIn(t, post.tags.all() )
-        
+
     def test_newPost_new_category(self):
         """
         when a post is created with a category that doesn't exist
@@ -247,11 +247,11 @@ class MetaWeblogTestCase(TestCase):
         blog = self.test_blog
         post_content['categories'] = ["Status"]
         res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
-        
+
         # verify that the category exists
         cats = Category.objects.filter(blog=self.test_blog, title="Status")
         self.assertTrue(len(cats) > 0)
-    
+
     def test_newPost_as_status(self):
         """
         When a post is created in the category "Status", or the category defined as
@@ -263,12 +263,12 @@ class MetaWeblogTestCase(TestCase):
         new_content = post_content.copy()
         new_content['categories'].append(getattr(settings, 'XBLOG_STATUS_CATEGORY_NAME', 'Status'))
         # post = self.s.metaWeblog.getPost(res, username, password)
-        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, new_content)        
+        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, new_content)
         new_post = Post.objects.get(pk=res)
-        
+
         self.assertEqual("status", new_post.post_format)
 
-    
+
     # metaWeblog.getPost
     def test_getPost_own_blog(self):
         appkey = 0
@@ -276,9 +276,9 @@ class MetaWeblogTestCase(TestCase):
         password = self.test_user1.author.remote_access_key
         blog = self.test_blog
         res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
-        
+
         post = self.s.metaWeblog.getPost(res, username, password)
-        
+
         self.assertEqual(res, post['postid'])
         for field in post_content.keys():
             if post.get(field):
@@ -292,11 +292,11 @@ class MetaWeblogTestCase(TestCase):
         appkey = 0
         username = self.rogue_user.username
         password = self.rogue_user.author.remote_access_key
-        
+
         with self.assertRaises(Fault):
             post = self.s.metaWeblog.getPost(self.post.id, username, password)
-        
-        
+
+
     # metaWeblog.deletePost
     def test_deletePost_own_post(self):
         """
@@ -319,7 +319,7 @@ class MetaWeblogTestCase(TestCase):
         res = self.s.metaWeblog.deletePost(appkey, postid, username, password, publish)
         with self.assertRaises(Post.DoesNotExist):
             gone_post = Post.objects.get(id=post.id)
-    
+
     def test_deletePost_others_post(self):
         """
         deletePost should fail if not the owner or a sysadmin
@@ -337,7 +337,7 @@ class MetaWeblogTestCase(TestCase):
         password = self.rogue_user.author.remote_access_key
         postid = post.id
         publish = False
-        
+
         with self.assertRaises(Fault):
             res = self.s.metaWeblog.deletePost(appkey, postid, username, password, publish)
 
@@ -358,11 +358,11 @@ class MetaWeblogTestCase(TestCase):
         password = self.test_admin.author.remote_access_key
         postid = post.id
         publish = False
-        
+
         res = self.s.metaWeblog.deletePost(appkey, postid, username, password, publish)
-        
-        
-        
+
+
+
     # metaWeblog.editPost
     def test_editPost_own(self):
         """
@@ -384,9 +384,9 @@ class MetaWeblogTestCase(TestCase):
         new_content = post_content.copy()
         new_content['title']="This is the new title"
         res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
-        
+
         post = Post.objects.get(id=postid)
-        
+
         self.assertEquals(post.title, new_content['title'])
 
     def test_editPost_admin(self):
@@ -411,7 +411,7 @@ class MetaWeblogTestCase(TestCase):
         res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
         post = Post.objects.get(id=postid)
         self.assertEquals(post.title, new_content['title'])
-        
+
     # metaWeblog.getCategories
     def test_getCategories_own_blog(self):
         """
@@ -420,9 +420,9 @@ class MetaWeblogTestCase(TestCase):
         blogid = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        
+
         cats = self.s.metaWeblog.getCategories(blogid, username, password)
-        
+
         for cat in cats:
             local_cat = Category.objects.get(id=cat['categoryId'])
 
@@ -433,16 +433,16 @@ class MetaWeblogTestCase(TestCase):
             self.assertIn(local_cat.get_absolute_url(), cat['htmlUrl'])
             # FIXME: need to update once feeds have been done...
             self.assertIn(local_cat.get_absolute_url()+"feed/", cat['rssUrl'])
-            
+
     # metaWeblog.getRecentPosts
     def test_getRecentPosts_own_blog(self):
         # create 10 posts
-        
+
         blogid = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        
-        
+
+
         for i in range(10):
             title = "Test Post %s" % str(i)
             body = "This is test post number %s" % i
@@ -458,7 +458,7 @@ class MetaWeblogTestCase(TestCase):
         num_posts = 10
         posts = self.s.metaWeblog.getRecentPosts(blogid, username, password, num_posts)
         self.assertEqual(10, len(posts))
-        
+
     def test_getRecentPosts_others_blog(self):
         """
         this should fail for mr. bad guy rogue user
@@ -468,19 +468,19 @@ class MetaWeblogTestCase(TestCase):
         password = self.rogue_user.author.remote_access_key
         num_posts = 10
         posts = self.s.metaWeblog.getRecentPosts(blogid, username, password, num_posts)
-        
+
         for post in posts:
             p = Post.objects.get(id=post['postid'])
             owner = p.author.user
             self.assertEqual(owner, self.rogue_user)
-            
+
     def test_edit_post_mt_keywords_string(self):
         """
         ecto sends mt_keywords as a string, and not as an
         array
-        
+
         this should be detected in the backend and fixed
-        
+
         """
         post = Post.objects.create(
             title = "Test User 1 Post",
@@ -500,31 +500,30 @@ class MetaWeblogTestCase(TestCase):
         new_content['mt_keywords']=keywords
         res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
         self.assertTrue(res)
-        
+
         for tag in keywords.split(","):
             t = Tag.objects.get(title__iexact=tag)
             self.assertIn(t, post.tags.all())
-        
+
     def test_twitter_post_from_ifttt(self):
         """
-        This peters out for some reason with IFTTT <-> Twitter 
+        This peters out for some reason with IFTTT <-> Twitter
         """
         blogid = ''
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         struct =  {
-            'post_status': 'publish', 
-            'mt_keywords': ['IFTTT', 'Twitter'], 
-            'description': u'<blockquote class="twitter-tweet"><p lang="en" dir="ltr">The software development process<br><br>i can\u2019t fix this<br><br>*crisis of confidence*<br>*questions career*<br>*questions life*<br><br>oh it was a typo, cool</p>&mdash; I Am Devloper (@iamdevloper) <a href="https://twitter.com/iamdevloper/status/694848050796212224">February 3, 2016</a></blockquote>\n<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>', 
-            'categories': ['Status'], 
+            'post_status': 'publish',
+            'mt_keywords': ['IFTTT', 'Twitter'],
+            'description': u'<blockquote class="twitter-tweet"><p lang="en" dir="ltr">The software development process<br><br>i can\u2019t fix this<br><br>*crisis of confidence*<br>*questions career*<br>*questions life*<br><br>oh it was a typo, cool</p>&mdash; I Am Devloper (@iamdevloper) <a href="https://twitter.com/iamdevloper/status/694848050796212224">February 3, 2016</a></blockquote>\n<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>',
+            'categories': ['Status'],
             'title': u'RT @iamdevloper: The software development process i can\u2019t fix this *crisis of confidence* *questions career* *questions life* oh it was a typo, cool'
         }
-        
+
         res = self.s.metaWeblog.newPost(blogid, username, password, struct)
-        
+
         p = Post.objects.get(pk=res)
         self.assertEqual(p.title, struct['title'])
         self.assertEqual(p.body, struct['description'])
 
     # metaWeblog.newMediaObject
-

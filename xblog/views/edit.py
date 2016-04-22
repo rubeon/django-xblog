@@ -18,13 +18,13 @@ try:
     from django.contrib.auth import get_user_model
     User = settings.AUTH_USER_MODEL
 except ImportError:
-    from django.contrib.auth.models import User 
+    from django.contrib.auth.models import User
 
 
 # from xcomments.models import FreeComment
-from django import forms 
+from django import forms
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-from xblog.models import Post, PostForm, Blog, filters
+from xblog.models import Post, PostForm, Blog, FILTERS
 
 import logging
 logger = logging.getLogger(__name__)
@@ -50,12 +50,12 @@ def content_list(request, **kwargs):
     site = get_current_site(request)
     post_list = Post.objects.filter(author=request.user.author).order_by('-pub_date')
     # logger.debug("post_list: %s" % str(post_list))
-    
+
     c = RequestContext(request, {'post_list': post_list, })
     t = loader.get_template("xblog/content_list.html")
 
     return HttpResponse(t.render(c))
-    
+
 
 @permission_required("xblog.change_post")
 def edit_post_inline(request, **kwargs):
@@ -73,19 +73,19 @@ def preview_post(request, **kwargs):
     """
     logger.debug("preview_post called")
     logger.debug(kwargs)
-    
+
     p = Post.objects.get(slug=kwargs['slug'])
-    
+
     logger.info("preview_post showing %s" % p)
     # data = p.get_full_body()
-    
+
     # put the post into a context for the template render...
     logger.debug("opening template")
     c = RequestContext(request, {'object':p})
     t = loader.get_template('includes/post_template.txt')
-    
+
     return HttpResponse(t.render(c))
-    
+
 
 @permission_required("xblog.change_post")
 def set_publish(request, **kwargs):
@@ -129,17 +129,17 @@ def edit_post(request, **kwargs):
             # return HttpResponseRedirect(t.render(c))
             # next line is required to save the many-to-many relations
             form.save_m2m()
-            
+
         else:
             logger.warn("Form data invalid; showing again")
             logger.warn("Form errors: %s" % form.errors)
-            messages.error(request, form.errors)            
+            messages.error(request, form.errors)
             # logger.debug(form)
         c = RequestContext(request, {'form': form})
         t = loader.get_template('xblog/edit_post.html')
         # messages.add_message(request, messages.ERROR, form.errors)
         return HttpResponse(t.render(c))
-            
+
     else:
         # f = forms.form_for_instance(p,form=PostForm)()
 
@@ -157,6 +157,5 @@ def stats(request, **kwargs) :
     c = {}
     c['readability'] = p.get_readability()
     c = RequestContext(request, c)
-    
-    return HttpResponse(t.render(c))
 
+    return HttpResponse(t.render(c))
