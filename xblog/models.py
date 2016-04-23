@@ -253,6 +253,11 @@ class Author(models.Model):
             return str(self.user)
         else:
             return self.fullname
+    def get_fullname(self):
+        """
+        get_fullname will return something, even if fullname isn't set
+        """
+        return str(self)
 
 class Category(models.Model):
     """

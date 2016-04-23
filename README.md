@@ -39,16 +39,14 @@ After the above, go through the usual process:
 ```bash
 
 django-admin startproject mysite
-cd mysite
 vi mysite/settings
 
 ```
-
+Add the dependencies to `INSTALLED_APPS`:
 ```python
 
     INSTALLED_APPS = [
         ...
-        'django.contrib.staticfiles',
         # following are for xblog
         'django.contrib.sites',
         'bootstrap3',
@@ -57,33 +55,30 @@ vi mysite/settings
     ]
     # Define a site, if not done already!
     SITE_ID=1
-_
 
 ```
 
 ## URL Setup
 
-Add a place to your site's root `urls.py` reach your blog:
+Add a place to your site's root `urls.py` reach your blog, and don't forget to
+add the `xblog` namespace:
 
 ```python
     import xblog.urls
 
     urlpatterns = [
         url(r'^admin/', admin.site.urls),
-        url(r'^blog/', xblog.urls),
+        url(r'^blog/', include(xblog.urls, namespace="xblog"),
     ]
 ```
 
 ## Creating users
 
-XBlog uses the Django authentication framework to keep track of users.  Users are linked to Authors, which can serve as the User profile model.
+XBlog uses the Django authentication framework to keep track of users.  `Users`
+are linked to `Authors`, which can serve as the User profile model.
 
-```bash
-
-
-
-````
-
+Author profiles are created automatically in the `User` model's `post_save`
+signal. See `xblog/models.py:create_profile` for reference.
 
 ## Adding to your templates
 

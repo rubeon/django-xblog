@@ -1,4 +1,9 @@
+import logging
+
+from django.contrib.sites.models import Site
+from django.conf import settings
 from xblog.models import Blog
+
 # from xcomments.models import FreeComment
 #
 # def media_url(request):
@@ -17,11 +22,20 @@ from xblog.models import Blog
 #     }
 #
 
-from django.contrib.sites.models import Site
+LOGGER=logging.getLogger(__name__)
 
 def site(request):
-    print "site entered"
-
+    """
+    Addes the `site` variable to template contexts.  Why oh why
+    has Django not added that in as a default?
+    """
+    LOGGER.debug("%s.site entered", __name__)
+    site = Site.objects.get_current()
+    try:
+        disqus_identifier=settings.DISQUS_IDENTIFIER
+    except AttributeError:
+        disqus_identifier=None
     return {
-        'site': Site.objects.get_current()
+        'site': site,
+        'disqus_identifier': disqus_identifier
     }
