@@ -1,99 +1,35 @@
-from django.test import TestCase
-from django.core.exceptions import PermissionDenied
-from django.contrib.auth.models import User
-from django.contrib.sites.models import Site
-from django.contrib.contenttypes.models import ContentType
-from django.test.utils import override_settings
-from django.test.client import Client
-from django.conf import settings
-
-from xblog.models import Post
-from xblog.models import Blog
-from xblog.models import Author
-from xblog.models import Category
-from xblog.models import Link
-from xblog.models import LinkCategory
-from xblog.models import Tag
-from xblog.models import FILTERS
-
-
-
-import six
+"""
+Test Cases for the WordPress XML RPC API
+"""
+# pylint: disable=invalid-name
+# pylint: disable=too-many-instance-attributes
 
 try:
-    from xmlrpc.client import Binary
     from xmlrpc.client import Fault
     from xmlrpc.client import ServerProxy
 except ImportError:  # Python 2
-    from xmlrpclib import Binary
     from xmlrpclib import Fault
     from xmlrpclib import ServerProxy
-from tempfile import TemporaryFile
 
-try:
-    from urllib.parse import parse_qs
-    from urllib.parse import urlparse
-    from xmlrpc.client import Transport
-except ImportError:  # Python 2
-    from urlparse import parse_qs
-    from urlparse import urlparse
-    from xmlrpclib import Transport
+
 from datetime import datetime
+from django.test import TestCase
+from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 
-class TestTransport(Transport):
-    """
-    Handles connections to XML-RPC server through Django test client.
-    """
+from xblog.models import Post
+from xblog.models import Blog
+from xblog.models import Category
 
-    def __init__(self, *args, **kwargs):
-        Transport.__init__(self, *args, **kwargs)
-        self.client = Client()
 
-    def request(self, host, handler, request_body, verbose=0):
-        self.verbose = verbose
-        response = self.client.post(handler,
-                                    request_body,
-                                    content_type="text/xml")
-        res = six.BytesIO(response.content)
-        setattr(res, 'getheader', lambda *args: '')  # For Python >= 2.7
-        res.seek(0)
-        return self.parse_response(res)
-
-# Posts (for posts, pages, and custom post types) - Added in WordPress 3.4
-# wp.getPost
-
-content = {
-    'post_type' : 'post',
-    'post_status' : 'publish',
-    'post_title' : 'A Normal Post',
-    'post_author' : '',
-    'post_excerpt' : '',
-    'post_content' : u"<p>This is some post content.  Sweet",
-    'post_date_gmt' : datetime.now(),
-    'post_format' : 'standard',
-    'post_name' : '',
-    'post_password' : '',
-    'comment_status' : 'open',
-    'ping_status' : 'open',
-    'sticky' : False,
-    'post_thumbnail' : [],
-    'post_parent' :  0,
-    # 'terms' : {
-    #     'mytags': [ContentType.objects.get_for_model(Tag)]
-    # },
-    # 'terms_names':{
-    #     'mytags':["MyTagNumber1", "MyTagNumber2"],
-    # },
-    'enclosure': {
-        'url' : '',
-        'length' : '',
-        'type' : '',
-    }
-}
+from .utils import TestTransport, POST_CONTENT
 
 class WpTestCase(TestCase):
     """
     Test Cases for the wp.* XMLRPC API calls
+
+    # Eight is reasonable in this case.
+
     """
 
     def setUp(self):
@@ -143,21 +79,21 @@ class WpTestCase(TestCase):
         self.test_blog = Blog.objects.create(
             title="Test User 1's Space",
             description="A blog for Test User 1.  Slippery when wet!",
-            owner = User.objects.get(username="test_user1"),
-            site = Site.objects.get_current()
+            owner=User.objects.get(username="test_user1"),
+            site=Site.objects.get_current()
         )
 
         self.test_category1 = Category.objects.create(
             title="Test Category 1",
             description="Category mean namely for testing",
-            blog = self.test_blog
+            blog=self.test_blog
         )
 
         self.post = Post.objects.create(
-            title = "Test User 1 Post",
-            body = "This is some stuff.\n\nSome stuff, you know.",
-            blog = self.test_blog,
-            author = self.test_user1.author
+            title="Test User 1 Post",
+            body="This is some stuff.\n\nSome stuff, you know.",
+            blog=self.test_blog,
+            author=self.test_user1.author
         )
         self.post.save()
 
@@ -177,33 +113,45 @@ class WpTestCase(TestCase):
         self.test_admin.author.save()
 
 
-        self.s = ServerProxy('http://localhost:8000/xmlrpc/', transport=TestTransport(), verbose=0)
+        self.server_proxy = ServerProxy('http://localhost:8000/xmlrpc/',
+                                        transport=TestTransport(),
+                                        verbose=0)
 
     # Posts
     # wp.getPost
-    def test_wp_getPost_own_post(self):
+    def test_getPost_own(self):
+        """
+        Test that a user can get his own post
+        """
         blog_id = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         post_id = self.post.id
-        res = self.s.wp.getPost(blog_id, username, password, post_id)
+        self.server_proxy.wp.getPost(blog_id, username, password, post_id)
 
-    def test_wp_getPost_others_post(self):
+    def test_getPost_others(self):
+        """
+        Test that a user cannot get other's own post
+        """
         blog_id = self.test_blog.id
         username = self.rogue_user.username
         password = self.rogue_user.author.remote_access_key
         post_id = self.post.id
         with self.assertRaises(Fault):
-            res = self.s.wp.getPost(blog_id, username, password, post_id)
+            self.server_proxy.wp.getPost(blog_id, username, password, post_id)
 
     # wp.getPosts
-    def test_wp_getPosts_own_posts_own_blog(self):
+    def test_getPosts_own_blog(self):
+        """
+        Test that getPosts works on own posts, own blog
+        pylint: disable=invalid-name
+        """
         blog_id = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
-        filter = {}
+        empty_filter = {}
 
-        res = self.s.wp.getPosts(blog_id, username, password, filter)
+        res = self.server_proxy.wp.getPosts(blog_id, username, password, empty_filter)
         # make sure it's the correct set
         for post in res:
             local_post = Post.objects.get(id=post['post_id'])
@@ -211,28 +159,33 @@ class WpTestCase(TestCase):
             self.assertEqual(self.test_user1, local_post.blog.owner)
 
     def test_wp_getPosts_others_blog(self):
+        """
+        Test that a user cannot get posts from others' blogs
+        pylint: disable=invalid-name
+        """
         blog_id = self.test_blog.id
         username = self.rogue_user.username
         password = self.rogue_user.author.remote_access_key
-        filter = {}
+        empty_filter = {}
 
         with self.assertRaises(Fault):
-            res = self.s.wp.getPosts(blog_id, username, password, filter)
+            self.server_proxy.wp.getPosts(blog_id, username, password, empty_filter)
 
     # wp.newPost
     def test_wp_newPost_own_blog(self):
         """
         Full-feature blog post
+        pylint: disable=invalid-name
         """
         blog_id = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
 
-        new_content = content.copy()
+        new_content = POST_CONTENT.copy()
 
         new_content['author_id'] = self.test_user1.id
 
-        res = self.s.wp.newPost(blog_id, username, password, content)
+        res = self.server_proxy.wp.newPost(blog_id, username, password, POST_CONTENT)
 
         # make sure it got made
 
@@ -245,6 +198,7 @@ class WpTestCase(TestCase):
     def test_wp_new_category_own_blog(self):
         """
         creates a new category, makes sure it takes
+        pylint: disable=invalid-name
         """
         blog_id = self.test_blog.id
         username = self.test_user1.username
@@ -256,24 +210,27 @@ class WpTestCase(TestCase):
             'description': 'A great category for stuff!'
         }
 
-        res = self.s.wp.newCategory(blog_id, username, password, new_cat)
+        res = self.server_proxy.wp.newCategory(blog_id, username, password, new_cat)
 
         # get the created Category
 
-        c = Category.objects.get(pk=res)
+        cat = Category.objects.get(pk=res)
         blog = Blog.objects.get(pk=blog_id)
-        self.assertEqual(c.title, new_cat['name'])
-        self.assertEqual(c.description, new_cat['description'])
-        self.assertEqual(c.blog, blog)
+        self.assertEqual(cat.title, new_cat['name'])
+        self.assertEqual(cat.description, new_cat['description'])
+        self.assertEqual(cat.blog, blog)
 
     def test_wp_get_options_own_blog(self):
+        """
+        get options for own blog
+        """
         blog_id = self.test_blog.id
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
 
         struct = {}
 
-        res = self.s.wp.getOptions(blog_id, username, password, struct)
+        self.server_proxy.wp.getOptions(blog_id, username, password, struct)
 
     # wp.editPost
     # wp.deletePost
@@ -290,14 +247,14 @@ class WpTestCase(TestCase):
     #     username = self.test_user1.username
     #     password = self.test_user1.author.remote_access_key
     #     for taxonomy in ['category', 'link_category','post_format', 'post_tag']:
-    #         res = self.s.wp.getTaxonomy(blog_id, username, password, taxonomy)
+    #         res = self.server_proxy.wp.getTaxonomy(blog_id, username, password, taxonomy)
     #
     # # wp.getTaxonomies
     # def test_wp_getTaxonomies(self):
     #     blog_id = self.test_blog.id
     #     username = self.test_user1.username
     #     password = self.test_user1.author.remote_access_key
-    #     res = self.s.wp.getTaxonomies(blog_id, username, password)
+    #     res = self.server_proxy.wp.getTaxonomies(blog_id, username, password)
     #
 
     # wp.getTerm

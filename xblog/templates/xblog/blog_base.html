@@ -2,9 +2,9 @@
 {% load  blog_tags %}
 {% load staticfiles %}
 {% block extrahead %}
-<link rel="alternate" href="https://{{ site.domain }}{% url 'feed-posts' %}" type="application/rss+xml" title="RSS 2.0" />
+<link rel="alternate" href="https://{{ site.domain }}{% url 'xblog:feed-posts' %}" type="application/rss+xml" title="RSS 2.0" />
 <link rel="EditURI" href="https://{{ site.domain }}{% url 'xmlrpc' %}" type="application/rsd+xml" title="RSD" />
-<link rel="archives" href="https://{{ site.domain }}{% url 'site-overview' %}/" title="Archives" charset="utf-8" />
+<link rel="archives" href="https://{{ site.domain }}{% url 'xblog:site-overview' %}/" title="Archives" charset="utf-8" />
 <link rel="pingback" href="https://{{ site.domain }}{% url 'xmlrpc' %}" />
 <link rel="stylesheet" type="text/css" href="{% static "pygments-css/zenburn.css" %}">
 {% block blogheaders %}<meta name="description" content="{{ site.name }}" />{% endblock %}

@@ -1,6 +1,12 @@
 """
 Test settings for xblog unit tests
 """
+import os
+import logging
+
+from xblog.xmlrpc_settings import XMLRPC_METHODS
+
+LOGGER = logging.getLogger(__name__)
 SECRET_KEY = 'fake-key'
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -18,8 +24,8 @@ INSTALLED_APPS = [
 DEBUG=True
 SITE_ID=1
 ROOT_URLCONF = 'xblog.tests.conf.urls'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-from xblog.xmlrpc_settings import XMLRPC_METHODS
 
 DATABASES = {
     'default': {
@@ -30,16 +36,19 @@ DATABASES = {
 
 TEMPLATES = [
     {
+        'APP_DIRS': True,
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+                'xblog.context_processors.site',
+
             ],
-            'loaders': [
-                ['django.template.loaders.cached.Loader', [
-                    'django.template.loaders.app_directories.Loader']
-                 ]
-            ]
+
         }
     }
 ]

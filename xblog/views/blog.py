@@ -5,6 +5,8 @@ blog.py
 
 Created by Eric Williams on 2007-02-21.
 """
+import logging
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.models import Site
 from django.template import RequestContext, Context, loader
@@ -30,8 +32,7 @@ from django.views.generic.detail import DetailView
 from xml.etree import ElementTree
 from xml.dom import minidom
 
-import logging
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 """
 def tag_overview(request, tag):
@@ -42,21 +43,19 @@ def tag_overview(request, tag):
     c['latest_posts'] = latest_posts
     c['pagetitle'] = "Tag Overview: %s" % t.title
     c['pageclass'] = "blog"
-    
+
     context = RequestContext(request, c)
     t = loader.get_template('xblog/overview.html')
-    
+
     return HttpResponse(t.render(context))
 """
 
 class AuthorListView(ListView):
     # shows the list of authors
-    
     model = Author
 
 def empty(request, **kwargs):
-    print "%s.empty entered" % __name__
-    logger.debug("%s.empty entered" % __name__)
+    LOGGER.debug("%s.empty entered", __name__)
     t = loader.get_template("xblog/first_page")
     return HttpResponse({}, request)
 
@@ -64,15 +63,15 @@ def template_preview(request, **kwargs):
     """
     just let's me preview a template in context...
     """
-    logger.debug("template_preview entered")
+    LOGGER.debug("template_preview entered")
     tmpl = kwargs.get("template_file", None)
-    logger.info("previewing '%s'" % tmpl)
+    LOGGER.info("previewing '%s'" % tmpl)
     if tmpl:
         try:
             c = {}
             context = RequestContext(request, c)
             t = loader.get_template("xblog/%s.html" % tmpl )
-            logger.info("Got %s" % t)
+            LOGGER.info("Got %s" % t)
             html = t.render(c, request)
             return HttpResponse(html)
         except Exception, e:
@@ -81,30 +80,30 @@ def template_preview(request, **kwargs):
             print '-'*60
             traceback.print_exc(file=sys.stdout)
             print '-'*60
-            logger.warn(e.message)
+            LOGGER.warn(e.message)
             return HttpResponse(str(e))
     else:
         return HttpResponse("Please specify template filename")
-    
+
 
 def blog_overview(request):
     # shows the latest entries in all blogs...
     # get last posts...
     # r = HttpResponse(mimetype="text/plain")
-    logger.debug("blog_overview entered")
+    LOGGER.debug("blog_overview entered")
     latest_posts = Post.objects.filter(status='publish').order_by('-pub_date')[:10]
-    
+
     # thisblog = Blog.objects.all()[0]
     c = {}
     c['site'] = Site.objects.get_current()
-    
+
     c['latest_posts'] = latest_posts
     c['pagetitle'] = "blog"
     c['pageclass'] = "blog"
     # c['thisblog'] = thisblog
     context = RequestContext(request, c)
     t = loader.get_template('xblog/overview.html')
-    
+
     return HttpResponse(t.render(context))
 
 
@@ -115,7 +114,7 @@ def site_overview(request):
     # latest special, which doesn't exist yet.
     # some content.
     # latest comments
-    logger.debug('site_overview entered')
+    LOGGER.debug('site_overview entered')
     c = {}
     ignorelist = ['Feature','Miscellany','Uncategorized']
     frontlist = []
@@ -129,29 +128,29 @@ def site_overview(request):
     #                 p.mycat = cat
     #                 frontlist.append(p)
     #         except Exception, e:
-    #             logger.warn("%s:%s" % (cat, e)) 
-    
+    #             LOGGER.warn("%s:%s" % (cat, e))
+
 
     latest_posts = Post.objects.filter(status='publish').order_by('-pub_date')[:10]
     # latest_comments = FreeComment.objects.all().order_by('-submit_date')[:10]
-    
+
     c['latest_feature'] = featurecat.post_set.order_by('-pub_date')
-    logger.debug("Latest feature: %s" % c['latest_feature'])
+    LOGGER.debug("Latest feature: %s" % c['latest_feature'])
     c['latest_posts']= latest_posts
     # c['latest_comments']= latest_comments
     c['frontlist']=frontlist
-    
+
     context = RequestContext(request, c)
     t = loader.get_template('base_site.html')
     return HttpResponse(t.render(context))
 
-def export_opml(request):    
+def export_opml(request):
     """
     export Links to opml
-    this was lifted from the "django_feedreader" application, which you 
+    this was lifted from the "django_feedreader" application, which you
     should definitely check out: https://github.com/ahernp/django-feedreader
     """
-    logger.debug('export_opml entered')
+    LOGGER.debug('export_opml entered')
     root = ElementTree.Element('opml')
     root.set('version', '2.0')
     head = ElementTree.SubElement(root, 'head')
@@ -197,34 +196,34 @@ def export_opml(request):
 #     error = None
 #     try:
 #         # The URL is the only required parameter
-#         if post.has_key('url'): 
+#         if post.has_key('url'):
 #             url = post['url']
-#         else: 
+#         else:
 #             raise Exception("Trackback URL Not provided")
 #         r = Response(p = Post.objects.get(id=int(id)),
 #             mode="trackback", url=url
 #         )
-#         
+#
 #         # use the title and url to create excerpt
 #         title = post.has_key('title') and request.POST['title'] or ''
 #         excerpt = post.has_key('excerpt') and request.POST['excerpt'] or ''
 #         r.content = (title + "\n\n" + excerpt).strip()
-#         
+#
 #         # fill in Akismet information from the request
 #         if meta.has_key('REMOTE_ADDR'): r.ip = meta['REMOTE_ADDR']
 #         if meta.has_key('HTTP_USER_AGENT'): r.user_agent = meta['HTTP_USER_AGENT']
 #         if meta.has_key('HTTP_REFERER'): r.referrer = meta['HTTP_REFERER']
-#         
-#         
+#
+#
 #     except Exception, message:
 #         error = {'code':1, 'message': message}
 #         # trackback errors
 #         from django.core.mail import mail_admins
 #         mail_admins('Failed Trackback', 'Trackback from %s to %s failed with %s', % (blog_name, url, message))
-#     
+#
 #     else:
 #         r.save()
-#         
+#
 #         response = HttpResponse(mimetype='text/xml')
 #             t = loader.get_template('train/trackback.xml')
 #             c = Context({'error': error})
@@ -234,14 +233,14 @@ def export_opml(request):
 class AuthorCreateView(CreateView):
     model = Author
     fields = ['fullname', 'url', 'avatar']
-    
+
 class AuthorUpdateView(UpdateView):
     model = Author
     fields = ['fullname','url','avatar']
-    
+
 class AuthorDetailView(DetailView):
     model = Author
-    
+
     def get_object(self, **kwargs):
         res = get_object_or_404(Author, user__username=self.kwargs.get('username'))
         return res
@@ -252,19 +251,19 @@ class CategoryDetailView(ListView):
     """
     model = Post
     slug_url_kwarg = "cat_slug"
-    
+
     def get_queryset(self, *args, **kwargs):
-        logger.debug("CategoryDetailView.get_queryset entered...")
+        LOGGER.debug("CategoryDetailView.get_queryset entered...")
         category = Category.objects.get(slug=self.kwargs[self.slug_url_kwarg])
         qs = category.post_set.all()
         return qs
-        
+
 
     def get_object(self):
          # this view should get blog_slug and cat_slug
-         logger.debug("CategoryDetailView.get_object entered")
-         logger.debug(self.args)
-         logger.debug(self.kwargs)
+         LOGGER.debug("CategoryDetailView.get_object entered")
+         LOGGER.debug(self.args)
+         LOGGER.debug(self.kwargs)
          blog = Blog.objects.get(slug=self.kwargs['blog_slug'])
          category = Category.objects.get(slug=self.kwargs['cat_slug'])
          if category.blog == blog:
@@ -277,7 +276,7 @@ class CategoryDetailView(ListView):
 class BlogCreateView(CreateView):
     model = Blog
     fields = ['title', 'description']
-    
+
     def form_valid(self, form):
         form.instance.owner = self.request.user
         form.instance.site = Site.objects.get_current()
@@ -286,12 +285,12 @@ class BlogCreateView(CreateView):
 class BlogDetailView(DetailView):
     model = Blog
     fields=['title','description', 'owner']
-    
+
 class BlogUpdateView(UpdateView):
     model = Blog
     fields=['title', 'description']
     # success_url = "../blog_details/"
-    
+
     def form_valid(self, form):
         form.instance.owner = self.request.user
         form.instance.site = Site.objects.get_current()
@@ -306,39 +305,42 @@ class PostYearArchiveView(YearArchiveView):
     allow_future = True
 
     Model = Post
-    
+
     def get_context_data(self, **kwargs):
         """
-        # makes custom context available in PostYearArchiveView
+        makes custom context available in PostYearArchiveView
         """
-        print "get context data entered"
+        LOGGER.debug("PostYearArchiveView.get_context_data entered")
         # Call the base implementation first to get a context
         context = super(PostYearArchiveView, self).get_context_data(**kwargs)
         context['site'] = Site.objects.get_current()
         return context
-        
-    def get_queryset(self):
-        logger.debug("get_queryset entered...")
-        if hasattr(self, 'owner'):
-            print "i has owner"
-            queryset = Post.objects.filter(author=self.owner)
-        else:
-            queryset = self.queryset
-        return queryset
-            
-    
+
+    # def get_queryset(self):
+    #     LOGGER.debug("get_queryset entered...")
+    #     if hasattr(self, 'owner'):
+    #         LOGGER.debug("i has owner")
+    #         queryset = Post.objects.filter(author=self.owner)
+    #     else:
+    #         LOGGER.debug("i has no owner")
+    #         queryset = self.queryset
+    #         LOGGER.debug('queryset %s', queryset)
+    #     return queryset
+
+
 class PostMonthArchiveView(MonthArchiveView):
     queryset = Post.objects.filter(status="publish")
     date_field = "pub_date"
     make_object_list = True
     allow_future = True
-    # logger.debug(queryset)
+    # LOGGER.debug(queryset)
     Model = Post
-    
+
     def get_context_data(self, **kwargs):
         """
         # makes custom context available in PostYearArchiveView
         """
+        LOGGER.debug("PostMonthArchiveView.get_context_data entered")
         # Call the base implementation first to get a context
         context = super(PostMonthArchiveView, self).get_context_data(**kwargs)
         context['site'] = Site.objects.get_current()
@@ -349,9 +351,9 @@ class PostDayArchiveView(DayArchiveView):
     date_field = "pub_date"
     make_object_list = True
     allow_future = True
-    # logger.debug(queryset)
+    # LOGGER.debug(queryset)
     Model = Post
-    
+
     def get_context_data(self, **kwargs):
         """
         # makes custom context available in PostYearArchiveView
@@ -361,16 +363,16 @@ class PostDayArchiveView(DayArchiveView):
         context['site'] = Site.objects.get_current()
         return context
 
-        
+
 class PostArchiveIndexView(ArchiveIndexView):
     queryset = Post.objects.filter(status="publish")
     date_field = "pub_date"
     make_object_list = True
     allow_future = True
-    # logger.debug(queryset)
+    # LOGGER.debug(queryset)
     Model = Post
     allow_empty = True
-    
+
     def get_context_data(self, **kwargs):
         """
         # makes custom context available in PostYearArchiveView
@@ -379,15 +381,15 @@ class PostArchiveIndexView(ArchiveIndexView):
         context = super(PostArchiveIndexView, self).get_context_data(**kwargs)
         context['site'] = Site.objects.get_current()
         return context
-        
+
 class PostDateDetailView(DateDetailView):
     queryset = Post.objects.filter(status="publish")
     date_field = "pub_date"
     make_object_list = True
     allow_future = True
-    # logger.debug(queryset)
+    # LOGGER.debug(queryset)
     Model = Post
-    
+
     def get_context_data(self, **kwargs):
         """
         # makes custom context available in PostYearArchiveView
@@ -396,5 +398,3 @@ class PostDateDetailView(DateDetailView):
         context = super(PostDateDetailView, self).get_context_data(**kwargs)
         context['site'] = Site.objects.get_current()
         return context
-        
-

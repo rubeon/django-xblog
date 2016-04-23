@@ -4,10 +4,10 @@
 # import metaWeblog
 
 XMLRPC_METHODS = (
-    ('xblog.metaWeblog.blogger_deletePost', 'blogger.deletePost'),
-    ('xblog.metaWeblog.blogger_getRecentPosts', 'blogger.getRecentPosts'),
-    ('xblog.metaWeblog.blogger_getUserInfo', 'blogger.getUserInfo'),
-    ('xblog.metaWeblog.blogger_getUsersBlogs', 'blogger.getUsersBlogs'),
+    ('xblog.views.blogger.deletePost', 'blogger.deletePost'),
+    ('xblog.views.blogger.getRecentPosts', 'blogger.getRecentPosts'),
+    ('xblog.views.blogger.getUserInfo', 'blogger.getUserInfo'),
+    ('xblog.views.blogger.getUsersBlogs', 'blogger.getUsersBlogs'),
     ('xblog.views.metaWeblog.deletePost', 'metaWeblog.deletePost'),
     ('xblog.views.metaWeblog.editPost', 'metaWeblog.editPost'),
     ('xblog.views.metaWeblog.getCategories', 'metaWeblog.getCategories'),
@@ -30,13 +30,13 @@ XMLRPC_METHODS = (
     ('xblog.views.wp.newPost', 'wp.newPost'),
     ('xblog.views.wp.getUser', 'wp.getUser'),
     ('xblog.views.wp.getProfile', 'wp.getProfile'),
-    
+
     # ('xblog.views.wp.getTags', 'wp.getTags'),
 
     ('xblog.views.wp.getUsersBlogs', 'wp.getUsersBlogs'),
     ('xblog.views.wp.newCategory', 'wp.newCategory'),
     ('xblog.views.wp.getOptions', 'wp.getOptions'),
     # ('xblog.views.wp.getPost', 'wp.getPost'),
-    
-    
+
+
 )

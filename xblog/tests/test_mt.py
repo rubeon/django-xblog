@@ -19,8 +19,7 @@ from xblog.models import Tag
 from xblog.models import LinkCategory
 from xblog.models import FILTERS
 
-
-import six
+from datetime import datetime
 
 try:
     from xmlrpc.client import Binary
@@ -30,38 +29,8 @@ except ImportError:  # Python 2
     from xmlrpclib import Binary
     from xmlrpclib import Fault
     from xmlrpclib import ServerProxy
-from tempfile import TemporaryFile
 
-
-try:
-    from urllib.parse import parse_qs
-    from urllib.parse import urlparse
-    from xmlrpc.client import Transport
-except ImportError:  # Python 2
-    from urlparse import parse_qs
-    from urlparse import urlparse
-    from xmlrpclib import Transport
-from datetime import datetime
-
-
-class TestTransport(Transport):
-    """
-    Handles connections to XML-RPC server through Django test client.
-    """
-
-    def __init__(self, *args, **kwargs):
-        Transport.__init__(self, *args, **kwargs)
-        self.client = Client()
-
-    def request(self, host, handler, request_body, verbose=0):
-        self.verbose = verbose
-        response = self.client.post(handler,
-                                    request_body,
-                                    content_type="text/xml")
-        res = six.BytesIO(response.content)
-        setattr(res, 'getheader', lambda *args: '')  # For Python >= 2.7
-        res.seek(0)
-        return self.parse_response(res)
+from .utils import TestTransport
 
 post_content = {
     'title':'This is a test title',

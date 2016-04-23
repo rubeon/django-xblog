@@ -54,4 +54,40 @@ def is_user_blog(user, blogid):
     else:
         return False
 
+def post_struct(post):
+    """ returns the meta-blah equiv of a post """
+    logger.debug("post_struct called")
+    # link = full_url(post.get_absolute_url())
+    link = post.get_absolute_url()
+    categories = [c.title for c in post.categories.all()]
+    # categories = []
+    # check to see if there's a more tag...
+    if post.body.find('<!--more-->') > -1:
+      description, mt_text_more = post.body.split('<!--more-->')
+    else:
+      description = post.body
+      mt_text_more = ""
 
+    if post.enable_comments:
+      mt_allow_comments = 1
+    else:
+      mt_allow_comments = 2
+
+    struct = {
+        'postid': post.id,
+        'title':post.title,
+        'permaLink':link,
+        'description':description,
+        'mt_text_more':mt_text_more,
+        'mt_convert_breaks':post.text_filter,
+        'categories': categories,
+        'userid': post.author.id,
+        'mt_allow_comments':str(mt_allow_comments)
+    }
+
+    if post.pub_date:
+            # struct['dateCreated'] = format_date(post.pub_date)
+            struct['dateCreated'] = post.pub_date
+    logger.debug("Returning from post_struct")
+    logger.debug(struct)
+    return struct

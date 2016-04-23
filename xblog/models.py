@@ -183,7 +183,7 @@ class Pingback(models.Model):
         return "Reply %s -> %s" % (self.source_url, self.target_url)
 
     __unicode__ = __str__
-    
+
     def save(self, *args, **kwargs):
         """
         save override.
@@ -434,7 +434,7 @@ class Post(models.Model):
         kwargs = {
             "year": self.pub_date.year,
         }
-        return reverse("year-archive", kwargs=kwargs)
+        return reverse("xblog:year-archive", kwargs=kwargs)
 
     def get_month_archive_url(self):
         """
@@ -445,7 +445,7 @@ class Post(models.Model):
             "year": self.pub_date.year,
             'month': self.pub_date.strftime("%b").lower(),
         }
-        return reverse("month-archive", kwargs=kwargs)
+        return reverse("xblog:month-archive", kwargs=kwargs)
 
 
     def get_day_archive_url(self):
@@ -458,7 +458,7 @@ class Post(models.Model):
             'day': self.pub_date.day,
 
         }
-        return reverse("day-archive", kwargs=kwargs)
+        return reverse("xblog:day-archive", kwargs=kwargs)
 
 
     def get_post_archive_url(self):

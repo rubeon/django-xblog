@@ -38,7 +38,7 @@ from .views.edit import content_list
 
 from .feeds import LatestPostsFeed
 
-YEAR_ARCHIVE_PATTERN = r'^(?P<year>[0-9]{4})/$'
+YEAR_ARCHIVE_PATTERN = r'^(?P<year>\d{4})/$'
 MONTH_ARCHIVE_PATTERN = r'^(?P<year>\d{4})/(?P<month>\w{3})/$'
 DAY_ARCHIVE_PATTERN = r'^(?P<year>\d{4})/(?P<month>\w{3})/(?P<day>\d{1,2})/$'
 DATE_DETAIL_PATTERN = \
@@ -105,7 +105,7 @@ urlpatterns = [
         name='export-opml'),
     url(TEMPLATE_PREVIEW_PATTERN, template_preview,
         name='template-preview'),
-    # url(r'^$', ArchiveIndexView.as_view(model=Post, date_field="pub_date",
+    # # url(r'^$', ArchiveIndexView.as_view(model=Post, date_field="pub_date",
     #     paginate_by=PAGE_LENGTH,
     #     queryset=Post.objects.all().filter(status="publish").select_related('author')),
     #     name='archive-index',  ),
@@ -119,5 +119,4 @@ urlpatterns = [
                                             queryset=Post.objects.filter(status="publish")),
         name='site-overview',
        ),
-
 ]

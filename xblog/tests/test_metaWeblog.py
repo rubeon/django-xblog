@@ -1,14 +1,12 @@
 """
-
 Test cases for metaWeblog access
-
 """
+
 from django.test import TestCase
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.test.utils import override_settings
-from django.test.client import Client
 from django.conf import settings
 
 from xblog.models import Post
@@ -20,9 +18,9 @@ from xblog.models import Tag
 from xblog.models import LinkCategory
 from xblog.models import FILTERS
 
+from .utils import TestTransport
 """Test cases for XBlog's MetaWeblog API"""
 
-import six
 
 try:
     from xmlrpc.client import Binary
@@ -32,50 +30,11 @@ except ImportError:  # Python 2
     from xmlrpclib import Binary
     from xmlrpclib import Fault
     from xmlrpclib import ServerProxy
+
 from tempfile import TemporaryFile
-
-
-try:
-    from urllib.parse import parse_qs
-    from urllib.parse import urlparse
-    from xmlrpc.client import Transport
-except ImportError:  # Python 2
-    from urlparse import parse_qs
-    from urlparse import urlparse
-    from xmlrpclib import Transport
 from datetime import datetime
 
-
-class TestTransport(Transport):
-    """
-    Handles connections to XML-RPC server through Django test client.
-    """
-
-    def __init__(self, *args, **kwargs):
-        Transport.__init__(self, *args, **kwargs)
-        self.client = Client()
-
-    def request(self, host, handler, request_body, verbose=0):
-        self.verbose = verbose
-        response = self.client.post(handler,
-                                    request_body,
-                                    content_type="text/xml")
-        res = six.BytesIO(response.content)
-        setattr(res, 'getheader', lambda *args: '')  # For Python >= 2.7
-        res.seek(0)
-        return self.parse_response(res)
-
-# create User, enable API access, make sure an API key is created
-
-# create User, enable API access, make sure can  API key is created
-
-# functions in metaWeblog API (not wp,mt, or blogger)
-
-
-
-
-
-post_content = {
+POST_CONTENT = {
     'title':'This is a test title',
     'description': "<p>This is the post content.  Hey-ooooo!</p>",
     'post_type': 'post',
@@ -221,7 +180,7 @@ class MetaWeblogTestCase(TestCase):
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         blog = self.test_blog
-        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
+        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, POST_CONTENT)
         self.assertEqual(type(1), type(int(res)))
 
     def test_newPost_nown_blog_tags(self):
@@ -229,10 +188,10 @@ class MetaWeblogTestCase(TestCase):
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         blog = self.test_blog
-        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
+        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, POST_CONTENT)
         post = Post.objects.get(pk=res)
         # check for tags
-        for tag in post_content['mt_keywords']:
+        for tag in POST_CONTENT['mt_keywords']:
             t = Tag.objects.get(title=tag)
             self.assertIn(t, post.tags.all() )
 
@@ -245,8 +204,8 @@ class MetaWeblogTestCase(TestCase):
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         blog = self.test_blog
-        post_content['categories'] = ["Status"]
-        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
+        POST_CONTENT['categories'] = ["Status"]
+        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, POST_CONTENT)
 
         # verify that the category exists
         cats = Category.objects.filter(blog=self.test_blog, title="Status")
@@ -260,7 +219,7 @@ class MetaWeblogTestCase(TestCase):
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         blog = self.test_blog
-        new_content = post_content.copy()
+        new_content = POST_CONTENT.copy()
         new_content['categories'].append(getattr(settings, 'XBLOG_STATUS_CATEGORY_NAME', 'Status'))
         # post = self.s.metaWeblog.getPost(res, username, password)
         res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, new_content)
@@ -275,15 +234,15 @@ class MetaWeblogTestCase(TestCase):
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         blog = self.test_blog
-        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, post_content)
+        res = self.s.metaWeblog.newPost(self.test_blog.id, username, password, POST_CONTENT)
 
         post = self.s.metaWeblog.getPost(res, username, password)
 
         self.assertEqual(res, post['postid'])
-        for field in post_content.keys():
+        for field in POST_CONTENT.keys():
             if post.get(field):
-                    self.assertEqual(post_content['title'], post['title'])
-                    self.assertEqual(post_content['description'], post['description'])
+                    self.assertEqual(POST_CONTENT['title'], post['title'])
+                    self.assertEqual(POST_CONTENT['description'], post['description'])
 
     def test_getPost_others_blog(self):
         """
@@ -381,7 +340,7 @@ class MetaWeblogTestCase(TestCase):
         password = self.test_user1.author.remote_access_key
         postid = post.id
         publish = False
-        new_content = post_content.copy()
+        new_content = POST_CONTENT.copy()
         new_content['title']="This is the new title"
         res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
 
@@ -406,7 +365,7 @@ class MetaWeblogTestCase(TestCase):
         password = self.test_admin.author.remote_access_key
         postid = post.id
         publish = False
-        new_content = post_content.copy()
+        new_content = POST_CONTENT.copy()
         new_content['title']="This is the new title"
         res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
         post = Post.objects.get(id=postid)
@@ -495,7 +454,7 @@ class MetaWeblogTestCase(TestCase):
         password = self.test_user1.author.remote_access_key
         postid = post.id
         publish = False
-        new_content = post_content.copy()
+        new_content = POST_CONTENT.copy()
         keywords = "One Tag, Two Tag, Red Tag, Blue Tag"
         new_content['mt_keywords']=keywords
         res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
