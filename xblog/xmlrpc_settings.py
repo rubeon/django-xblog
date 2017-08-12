@@ -3,6 +3,11 @@
 # from .views import wp
 # import metaWeblog
 
+"""
+This file defines XMLRPC methods for use
+by XBlog. Works with django-xmlrpc
+"""
+
 XMLRPC_METHODS = (
     ('xblog.views.blogger.deletePost', 'blogger.deletePost'),
     ('xblog.views.blogger.getRecentPosts', 'blogger.getRecentPosts'),

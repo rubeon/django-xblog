@@ -1,10 +1,6 @@
 # -*- coding: utf8 -*-
 """
-
 Context processors for XBlog
-
-
-
 """
 import logging
 
