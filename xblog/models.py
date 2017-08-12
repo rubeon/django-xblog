@@ -16,7 +16,7 @@ import markdown2
 import django.utils.timezone
 
 from django.db import models
-from django.core.mail import send_mail
+# from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
 from django.core.validators import MinLengthValidator
 from django.utils.text import Truncator
@@ -29,7 +29,7 @@ from django.forms import ModelForm
 from django.db.models.signals import post_save
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
-from django.contrib.auth import get_user_model
+# from django.contrib.auth import get_user_model
 from django.core.urlresolvers import reverse
 
 from .external.postutils import SlugifyUniquely
@@ -184,12 +184,16 @@ class Pingback(models.Model):
 
     __unicode__ = __str__
 
-    def save(self, *args, **kwargs):
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
         """
         save override.
         """
         LOGGER.debug("Pingback.save() entered: %s", str(self))
-        super(self.__class__, self).save(*args, **kwargs)
+        super(Pingback, self).save(force_insert=force_insert,
+                                   force_update=force_update, using=using,
+                                   update_fields=update_fields
+                                  )
         mail_subject = "New Pingback from %s" % self.title
         mail_body = """
 Source URL: %s
@@ -200,7 +204,7 @@ Target URL: %s
         LOGGER.debug(mail_subject)
         LOGGER.debug(mail_body)
         # mail_managers(mail_subject, mail_body, fail_silently=False)
-        send_mail(mail_subject, mail_body, "eric@xoffender.de", [self.post.author.email])
+        # send_mail(mail_subject, mail_body, "eric@xoffender.de", [self.post.author.email])
 
 class Tag(models.Model):
     """(Tag description)"""
@@ -237,7 +241,8 @@ class Author(models.Model):
         LOGGER.debug("%s: %s", str(self), "Getting avatar url")
         return self.avatar.url
 
-    def save(self, *args, **kwargs):
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
         """
         special instructions on save
         """
@@ -246,13 +251,16 @@ class Author(models.Model):
                 if not self.remote_access_key:
                     self.remote_access_key = random_string()
 
-        super(self.__class__, self).save(*args, **kwargs)
+        super(Author, self).save(force_insert=force_insert,
+                                 force_update=force_update,
+                                 using=using,
+                                 update_fields=update_fields
+                                )
 
     def __str__(self):
         if self.fullname == '':
             return str(self.user)
-        else:
-            return self.fullname
+        return self.fullname
     def get_fullname(self):
         """
         get_fullname will return something, even if fullname isn't set
@@ -282,10 +290,10 @@ class Category(models.Model):
 
         if absolute:
             return "http://%s" % self.blog.site.domain + local_url
-        else:
-            return local_url
+        return local_url
 
-    def save(self, *args, **kwargs):
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
         """
         Override save for Category
         """
@@ -293,7 +301,11 @@ class Category(models.Model):
             self.slug = SlugifyUniquely(self.title, self.__class__)
 
         LOGGER.debug("%s.Category.save entered %s", __name__, self.title)
-        super(self.__class__, self).save(*args, **kwargs)
+        super(Category, self).save(force_insert=force_insert,
+                                   force_update=force_update,
+                                   using=using,
+                                   update_fields=update_fields
+                                  )
         LOGGER.debug("category.save complete")
 
 @python_2_unicode_compatible
@@ -402,7 +414,8 @@ class Post(models.Model):
         self.tags = taglist
 
 
-    def save(self, *args, **kwargs):
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
         """
         save override for Post model
         """
@@ -419,7 +432,11 @@ class Post(models.Model):
                                       convert_linebreaks)(self.body)).chars(50, html=True)
         self.summary = trunc
         # finally, save the whole thing
-        super(self.__class__, self).save(*args, **kwargs)
+        super(Post, self).save(force_insert=force_insert,
+                               force_update=force_update,
+                               using=using,
+                               update_fields=update_fields
+                              )
         LOGGER.debug("Post.save complete")
 
     def get_archive_url(self):
@@ -568,8 +585,7 @@ class Post(models.Model):
                                 webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
                                 """ % video_id
                 return video_link
-            else:
-                return "<b>Unsupported Video...</b>"
+            return "<b>Unsupported Video...</b>"
     # newness?
     get_formatted_body.allow_tags = True
 
@@ -635,7 +651,8 @@ class Blog(models.Model):
         """
         return reverse('xblog:blog-detail', kwargs={'slug': self.slug})
 
-    def save(self, *args, **kwargs):
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
         """
         save override for Blog Model
         """
@@ -645,7 +662,10 @@ class Blog(models.Model):
             LOGGER.debug("Slug not given, setting to %s", slug)
             self.slug = slug
 
-        super(self.__class__, self).save(*args, **kwargs)
+        super(Blog, self).save(force_insert=force_insert,
+                               force_update=force_update,
+                               using=using,
+                               update_fields=update_fields)
         LOGGER.debug("blog.save complete")
 
 

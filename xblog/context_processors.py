@@ -1,8 +1,12 @@
+# -*- coding: utf8 -*-
+"""
+Context processors for XBlog
+"""
 import logging
 
 from django.contrib.sites.models import Site
 from django.conf import settings
-from xblog.models import Blog
+# from xblog.models import Blog
 
 # from xcomments.models import FreeComment
 #
@@ -22,7 +26,7 @@ from xblog.models import Blog
 #     }
 #
 
-LOGGER=logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 def site(request):
     """
@@ -30,12 +34,13 @@ def site(request):
     has Django not added that in as a default?
     """
     LOGGER.debug("%s.site entered", __name__)
-    site = Site.objects.get_current()
+    LOGGER.debug("%s request", str(request))
+    this_site = Site.objects.get_current()
     try:
-        disqus_identifier=settings.DISQUS_IDENTIFIER
+        disqus_identifier = settings.DISQUS_IDENTIFIER
     except AttributeError:
-        disqus_identifier=None
+        disqus_identifier = None
     return {
-        'site': site,
+        'site': this_site,
         'disqus_identifier': disqus_identifier
     }
