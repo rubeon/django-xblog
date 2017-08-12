@@ -1,1 +1,1 @@
-TM_PYTHON="../../bin/python"
+TM_PYTHON="${CWD}/../bin/python"
