@@ -3,7 +3,7 @@ Blogging application for your Django site
 
 ## Build Status
 
-[![Build Status](https://travis-ci.org/rubeon/django-xblog.svg?branch=master)](https://travis-ci.org/rubeon/django-xblog)
+[![Build Status](https://travis-ci.org/rubeon/django-xblog.svg?branch=master)](https://travis-ci.org/rubeon/django-xblog) [![PyPI version](https://badge.fury.io/py/django-xblog.svg)](https://badge.fury.io/py/django-xblog)
 
 ## Installation
 
