@@ -3,7 +3,7 @@ Blogging application for your Django site
 
 ## Build Status
 
-[![Build Status](https://drone.io/github.com/rubeon/django-xblog/status.png)](https://drone.io/github.com/rubeon/django-xblog/latest)
+[![Build Status](https://travis-ci.org/rubeon/django-xblog.svg?branch=master)](https://travis-ci.org/rubeon/django-xblog)
 
 ## Installation
 
