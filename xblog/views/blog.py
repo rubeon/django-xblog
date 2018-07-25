@@ -74,12 +74,12 @@ def template_preview(request, **kwargs):
             LOGGER.info("Got %s" % t)
             html = t.render(c, request)
             return HttpResponse(html)
-        except Exception, e:
+        except Exception as e:
             import sys, traceback
-            print "Exception in user code:"
-            print '-'*60
+            print("Exception in user code:")
+            print('-'*60)
             traceback.print_exc(file=sys.stdout)
-            print '-'*60
+            print('-'*60)
             LOGGER.warn(e.message)
             return HttpResponse(str(e))
     else:
@@ -127,7 +127,7 @@ def site_overview(request):
     #             if p:
     #                 p.mycat = cat
     #                 frontlist.append(p)
-    #         except Exception, e:
+    #         except Exception as e:
     #             LOGGER.warn("%s:%s" % (cat, e))
 
 

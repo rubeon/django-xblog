@@ -35,7 +35,7 @@ except ImportError:  # Python 2
 
 import logging
 import datetime
-import urlparse
+import urllib.parse
 import os
 
 logger = logging.getLogger(__name__)
@@ -261,7 +261,7 @@ def newPost(blog_id, username, password, content):
         for term, ids in terms.items():
             # tag?
             if ContentType.objects.get_for_model(Tag) in ids:
-                print "Tag ID found"
+                print("Tag ID found")
                 tags.append(term)
                 struct['tags'] = tags 
     
@@ -441,7 +441,7 @@ def getOptions(blog_id, username, password, options={}):
         logger.debug("Using blog with id %s" % str(blog.id))
     check_perms(user, blog)
     admin_url = {
-        'value': urlparse.urljoin(blog.get_url(), "admin"),
+        'value': urllib.parse.urljoin(blog.get_url(), "admin"),
         'desc': "The URL to the admin area",
         'readonly': True,
     }

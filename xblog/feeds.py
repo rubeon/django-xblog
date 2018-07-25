@@ -7,7 +7,7 @@ Created by Eric Williams on 2007-02-23.
 """
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 # from django.core.exceptions import ObjectDoesNotExist
 
 from .models import Post

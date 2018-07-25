@@ -118,7 +118,7 @@ def call_xmlrpc(request, module):
         response = dispatcher._marshaled_dispatch(
             data, getattr(mod, '_dispatch', None)
         )
-    except Exception, e:
+    except Exception as e:
         logger.warn("Baaaa-DOING! %s" % str(e))
         response = SimpleXMLRPCServer.xmlrpclib.Fault(1, "%s:%s" % (
             sys.exc_type, sys.exc_value

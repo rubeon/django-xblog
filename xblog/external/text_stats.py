@@ -20,13 +20,13 @@ def calculate_readability(post):
         res['smog'] = textstat.textstat.smog_index(text)
         res['coleman_liau'] = textstat.textstat.coleman_liau_index(text)
         res['consensus'] = textstat.textstat.readability_consensus(text)
-    except Exception, e:
+    except Exception as e:
         import traceback, sys
         exc_type, exc_value, exc_traceback = sys.exc_info()
         logger.warn(e)
         logger.debug(text)
         traceback.print_tb(exc_traceback)
-        print e
+        print(e)
         res = {}
     return res
 
