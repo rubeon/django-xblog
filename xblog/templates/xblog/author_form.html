@@ -1,16 +1,7 @@
 {% extends "xblog/blog_base.html" %}
-{% load bootstrap3 %}
 {% block maincontent %}
-
-{% bootstrap_form_errors form layout='inline' %}
 <form action="" method="post">{% csrf_token %}
-    {% bootstrap_form form %}
-    {% buttons %}
-        <button type="submit" class="btn btn-primary">
-            {% bootstrap_icon "star" %} Save
-        </button>
-    {% endbuttons %}
-
+        <button type="submit">Save</button>
 </form>
 
 {% endblock %}

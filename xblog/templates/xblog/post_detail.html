@@ -1,6 +1,5 @@
 {% extends "xblog/post_archive.html" %}
 <!-- post_detail.html -->
-{% load markdown_deux_tags %}
 {% block extratitle %} {{ object.title }}{% endblock %}
 {% block blogheaders %}<meta name="description" value="{{ site.name }}: {{ object.title }}">{% endblock %}
 {% block extranav %}<li><a href="{% url "xblog:year-archive" year=object.pub_date|date:"Y" %}">{{ object.pub_date.year}}</a></li>
@@ -18,6 +17,7 @@
 {% else %}
 <!-- it's a post!  -->
 {% include "includes/post_template.txt" %}
+{% include "includes/post_stats.txt" %}
 {% endif %}
 <!-- includes -->
 {% include "includes/disqus_comments.txt" %}

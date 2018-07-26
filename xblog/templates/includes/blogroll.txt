@@ -1,0 +1,18 @@
+<!-- blogroll -->
+{% load blog_tags %}
+{% get_blogroll %}
+{% for cat in blogroll_categories %}
+<h4>{{ cat.title }}</h4>
+<ul class="list-unstyled">{% for link in cat.link_set.all|dictsort:"link_name" %}
+  <li class="blogroll"><a href="{{link.url}}">{{ link.link_name }}</a></li>
+{% endfor %}
+</ul>
+{% endfor %}
+<p class="blogrollheader">Archives</p>
+{% get_blog_months %}
+{% for month in blog_months %}
+{% ifchanged %}{% if not forloop.first %}<br />{% endif %}<span class="blogrollheader"><a href="/blog/{{month.year}}">{{month|date:"Y"|lower}}</a></span><br />{% endifchanged %}
+<a href="/blog/{{ month|date:"Y/M"|lower }}/" title="{{ month|date:"M Y" }}">{{ month|date:"M" }}</a>
+{% ifequal month.month 6  %}<br />{% endifequal %}{% endfor %}
+<!-- /blogroll -->
+

@@ -1,13 +1,6 @@
 {% extends "xblog/blog_base.html" %}
-{% load bootstrap3 %}
 {% load static %}
 {% block extrahead %}
-<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap-tokenfield.css" %}">
-<script type="text/javascript" src="{% static "js/bootstrap-tokenfield.js" %}"></script>
-<script type="text/javascript" src="{% static "js/typeahead/typeahead.jquery.js" %}"></script>
-<script type="text/javascript" src="{% static "js/typeahead/bloodhound.js" %}"></script>
-<script src="{% static "ckeditor/ckeditor.js" %}"></script>
-
 {% endblock %}
 
 {% block maincontent %}
@@ -15,68 +8,9 @@
 	{% csrf_token %}
 	
     <fieldset class="form-group">
-      <label for="id_title">Post Title</label>
-      <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Enter email">
-      <small class="text-muted">We'll never share your email with anyone else.</small>
+      <label for="id_title">{{ object.title }}</label>
     </fieldset>
-	
-	
-	
-    {% bootstrap_form form %}
-    {% buttons %}
-        <button type="submit" class="btn btn-primary">
-            {% bootstrap_icon "star" %} Save
-        </button>
-    {% endbuttons %}
-
-<div id="default-suggestions" style="background-color: #fff;">
-  <input id="tags" class="typeahead" type="text" placeholder="Space-separated Tags">
-</div>
-
+    {{ form }}
+    <button type="submit" class="btn btn-primary">Save</button>
 </form>
-
-<script>
-var API_URL = "/blog/tags/";
-var engine = new Bloodhound({
-    remote: { url : API_URL },
-    datumTokenizer: function(d) {
-    return Bloodhound.tokenizers.whitespace(d.fields.title);
-  },
-    queryTokenizer: Bloodhound.tokenizers.whitespace,
-    
-  }
-);
-
-promise = engine.initialize();
-promise
-.done(function() { console.log('ready to go!'); })
-.fail(function() { console.log('err, something went wrong :('); });
-
-// $('.typeahead').typeahead(
-//     { 
-//         minLength: 3,
-//         highlight: true,
-//     },
-//     {
-//         name: 'my-dataset',
-//         source: engine,
-//         displayKey: function(tag) {
-//             console.log(tag.fields.title);
-//           return tag.fields.title;        
-//       },
-// });
-
-$('#tags').tokenfield({
-  typeahead: [null, { 
-      source: engine,
-      displayKey: function(tag) {
-          return tag.fields.title;
-      }
-   }]
-});
-</script>
-
-<script>
-	CKEDITOR.replace('id_body');
-</script>
 {% endblock %}
