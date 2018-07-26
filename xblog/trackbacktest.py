@@ -18,15 +18,15 @@ def get_ping_urls(url):
     tb_urls = []
     
     txt = urllib.urlopen(url).read()
-    print "Got %d bytes" % len(txt)
+    print("Got %d bytes" % len(txt))
     soup = bs(txt)
     # walk through the links, looking for ping-entries
     
     for a in soup.findAll('link'):
-        print a
+        print(a)
         rel = a.get('rel')
         if rel == 'pingback':
-            print "Got pingback URL:", a.href
+            print("Got pingback URL:", a.href)
             ping_urls.append(a.get('href'))
     
     # now do t he trackbacks...
@@ -35,8 +35,8 @@ def get_ping_urls(url):
     for x in tb_re.findall(txt.replace('\n',' ')):
         parseString(x, rdfdata)
         # print rdf.ids
-        print "URL:", rdfdata.attrs.get('dc:identifier')
-        print "Trackback URL:", rdfdata.attrs.get('trackback:ping')
+        print("URL:", rdfdata.attrs.get('dc:identifier'))
+        print("Trackback URL:", rdfdata.attrs.get('trackback:ping'))
         tb_urls.append(rdfdata.attrs.get('trackback:ping'))
     
     return ping_urls, tb_urls
@@ -69,6 +69,6 @@ class RDF(ContentHandler):
 if __name__=='__main__':
     tb_test_url = "http://jaksrv.local/mt/2007/03/test_fo_die_trackabacakas.html"
     ping_test_url = "http://rubeon.ath.cx/wp/?p=29"
-    print get_ping_urls(tb_test_url)
-    print get_ping_urls(ping_test_url)
+    print(get_ping_urls(tb_test_url))
+    print(get_ping_urls(ping_test_url))
     

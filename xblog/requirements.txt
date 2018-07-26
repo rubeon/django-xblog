@@ -1,6 +1,6 @@
 django
 html2text
-BeautifulSoup
+BeautifulSoup4
 django-markdown-deux
 Pillow
 pytz
@@ -10,3 +10,4 @@ markdown2
 django-bootstrap3
 django_xmlrpc
 six
+

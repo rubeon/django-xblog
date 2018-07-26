@@ -66,6 +66,8 @@ AUTHOR_DETAIL_PATTERN = r'^author/(?P<username>\w+)/$'
 
 PAGE_LENGTH = 30
 
+app_name = 'xblog'
+
 urlpatterns = [
     url(YEAR_ARCHIVE_PATTERN, PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH),
         name="year-archive"),

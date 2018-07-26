@@ -122,7 +122,7 @@ def setPostCategories(postid, username, password, cats=[]):
     for cat in cats:
         category = Category.objects.get(pk=cat['categoryId'])
         # print "Got", category
-        if cat.has_key('isPrimary') and cat['isPrimary']:
+        if 'isPrimary' in cat and cat['isPrimary']:
             logger.debug("Got primary category '%s'" % cat)
             post.primary_category_name = category
         post.categories.add(category)

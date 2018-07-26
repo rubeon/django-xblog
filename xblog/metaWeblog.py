@@ -32,9 +32,11 @@ from .ping_modes import send_pings
 try:
     from xmlrpc.client import Fault
     from xmlrpc.client import DateTime
+    from urllib.parse import urljoin
 except ImportError:  # Python 2
     from xmlrpclib import Fault
     from xmlrpclib import DateTime
+    from urlparse import urljoin
 
 
 # import config
@@ -44,7 +46,7 @@ except ImportError:  # Python 2
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 # this is for getting the URL of xmlrpc endpoing
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 import logging
 logger = logging.getLogger(__name__)
@@ -83,7 +85,7 @@ def authenticated(pos=1):
     return _decorate
 
 def full_url(url):
-    return urlparse.urljoin(settings.SITE_URL, url)
+    return urljoin(settings.SITE_URL, url)
 
 # @public
 # @authenticated()
@@ -377,7 +379,8 @@ def mt_setPostCategories(postid, username, password, cats):
     for cat in cats:
         category = Category.objects.get(pk=cat['categoryId'])
         logger.debug("Got %s" % category)
-        if cat.has_key('isPrimary') and cat['isPrimary']:
+        if 'isPrimary' in cat and cat['isPrimary']:
+        # if cat.has_key('isPrimary') and cat['isPrimary']:
             logger.debug("Got primary category '%s'" % cat)
             post.primary_category_name = category
         post.categories.add(category)

@@ -19,6 +19,10 @@ except ImportError:  # Python 2
     from xmlrpclib import Fault
     from xmlrpclib import DateTime
 
+try:
+    from urllib.parse import quote as urlquote
+except ImportError:  # Python 2
+    from urllib import quote as urlquote
 LOGIN_ERROR = 801
 PERMISSION_DENIED = 803
 
@@ -79,7 +83,8 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
 
     user = get_user(username, password)
     if not is_user_blog(user, blogid):
-        raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+        # raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
+        raise Blog.DoesNotExist
 
     try:
         LOGGER.info("Checking for passed blog parameter")
@@ -102,7 +107,7 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
         author =user.author
     )
     post.prepopulate()
-    LOGGER.debug( "Saving")
+    LOGGER.debug("Saving")
     # need to save beffore setting many-to-many fields, silly django
     post.save()
     categories = struct.get("categories", [])
@@ -118,7 +123,7 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
             c = Category(blog=blog, title=category)
             c.save()
         clist.append(c)
-    post.categories=clist
+    post.categories.set(clist)
     post.save()
     LOGGER.info("Post %s saved", post)
     LOGGER.info("Setting Tags")
@@ -281,7 +286,7 @@ def newMediaObject(blogid, username, password, data):
     if not is_user_blog(user, blogid):
         raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
 
-    upload_dir = "blog_uploads/%s" % urllib.quote(user.username)
+    upload_dir = "blog_uploads/%s" % urlquote(user.username)
     bits       = data['bits']
     mime       = data['type']
     name       = data['name']

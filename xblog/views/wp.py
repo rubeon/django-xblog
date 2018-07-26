@@ -29,13 +29,17 @@ from .utils import get_user
 try:
     from xmlrpc.client import Fault
     from xmlrpc.client import DateTime
+    from urllib.parse import urljoin
 except ImportError:  # Python 2
     from xmlrpclib import Fault
     from xmlrpclib import DateTime
-
+    from urlparse import urljoin
 import logging
 import datetime
-import urlparse
+try:
+  from urllib.parse import urlparse
+except ImportError:
+  from urlparse import urlparse
 import os
 
 logger = logging.getLogger(__name__)
@@ -258,10 +262,10 @@ def newPost(blog_id, username, password, content):
         struct = {}
         tags = []
         categories = []
-        for term, ids in terms.items():
+        for term, ids in list(terms.items()):
             # tag?
             if ContentType.objects.get_for_model(Tag) in ids:
-                print "Tag ID found"
+                print("Tag ID found")
                 tags.append(term)
                 struct['tags'] = tags 
     
@@ -441,7 +445,7 @@ def getOptions(blog_id, username, password, options={}):
         logger.debug("Using blog with id %s" % str(blog.id))
     check_perms(user, blog)
     admin_url = {
-        'value': urlparse.urljoin(blog.get_url(), "admin"),
+        'value': urljoin(blog.get_url(), "admin"),
         'desc': "The URL to the admin area",
         'readonly': True,
     }

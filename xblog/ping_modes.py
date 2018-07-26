@@ -14,11 +14,23 @@ from xblog.models import Pingback, Post
 from django.conf import settings
 import datetime
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-import xmlrpclib
+try:
+    import xmlrpc
+except ImportError:
+    import xmlrpclib as xmlrpc
 import urllib, re
+
+try:
+    from urllib import urlopen
+except ImportError:
+    from urllib.request import urlopen
+
 # from external.BeautifulSoup import BeautifulSoup as bs
-from BeautifulSoup import BeautifulSoup as bs
-import exceptions
+from bs4 import BeautifulSoup as bs
+try:
+    import builtins
+except ImportError:
+    import exceptions as builtins
 import logging
 logger = logging.getLogger(__name__)
 
@@ -31,7 +43,7 @@ def process_trackback(request, slug):
             post = Post.objects.get(slug__exact=slug)
             logger.debug( "post: %s" % post.title)
             target_uri = post.get_absolute_uri()
-        except Exception, e:
+        except Exception as e:
             logger.warn(e)
             return False
         logger.debug("From: %s" % source_uri)
@@ -77,7 +89,7 @@ def pingback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=F
             # it's a dupe, just ignore it.
             logger.warn( "Got this pingback already, homey.")
             return False
-    except Exception,e:
+    except Exception as e:
         import sys
         logger.warn(e)
         return False, sys.exc_info()[0]
@@ -99,7 +111,7 @@ def pingback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=F
             try:
                 # we got *something*
                 logger.info("Sending ping request %s -> %s" % (source_uri, pingback_address))
-                s = xmlrpclib.ServerProxy(pingback_address)
+                s = xmlrpc.client.ServerProxy(pingback_address)
                 logger.warn("s: %s" % str(s))
                 res = s.pingback.ping(source_uri, target_uri)
                 logger.info( "Got back '%s'" % res)
@@ -109,7 +121,7 @@ def pingback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=F
                 struct['target_url']  = target_uri
                 struct['title'] = post.title
                 logger.debug(str(struct))
-            except Exception, e:
+            except Exception as e:
                 import sys
                 logger.warn(e)
                 return False, sys.exc_info()[0]
@@ -159,7 +171,7 @@ def pingback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=F
         logger.debug("pingback_ping completed: res=%s" % str(res))
         return res
 
-    except Exception, e:
+    except Exception as e:
         logger.warn("pingback_ping exception: " + str(e))
         # logger.error(e)
         return False
@@ -184,7 +196,7 @@ def get_pingback_url(target_url):
     """
     logger.debug("get_pingback_url called...")
     logger.debug("grabbing " + str(target_url))
-    html = urllib.urlopen(target_url).read()
+    html = urlopen(target_url).read()
     logger.info( "Got %d bytes" % len(html))
     soup = bs(html)
     # check for link tags...
@@ -201,7 +213,7 @@ def confirm_pingback(target_url, search_url, check_spam=True):
     # target url must contain search_url
     # returns bool is_spam, struct  
     logger.debug("Loading external page: %s" % target_url)
-    text = urllib.urlopen(target_url).read()
+    text = urlopen(target_url).read()
     soup = bs(text)
     logger.info("Checking for URL: %s" % str(search_url))
     for a in soup.findAll('a'):
@@ -270,7 +282,7 @@ def trackback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=
             # it's a dupe, just ignore it.
             logger.warn("Got this pingback already, homey.")
             return False, "Got this pingback already, homey."
-    except Exception,e:
+    except Exception as e:
         logger.warn(str(e))
 
 
@@ -293,7 +305,7 @@ def trackback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=
                 # s = xmlrpclib.ServerProxy(pingback_address)
                 # res = s.pingback.ping(source_uri, target_uri)
                 data = dict(title=p.title, url=source_uri, excerpt=p.summary,blog_name=p.blog.title)
-                res = urllib.urlopen(target_uri, urllib.urlencode(data)).read()
+                res = urlopen(target_uri, urllib.urlencode(data)).read()
                 logger.info("Got back %s" % str(res))
                 struct = {}
                 try:
@@ -303,7 +315,7 @@ def trackback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=
                 struct['source_url']  = source_uri
                 struct['target_url']  = target_uri
                 struct['title'] = post.title
-            except Exception,e:
+            except Exception as e:
                 import sys
                 logger.warn(e)
                 return False, sys.exc_info()[0]
@@ -357,7 +369,7 @@ def trackback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=
         logger.debug(res)
         return True, res
 
-    except Exception, e:
+    except Exception as e:
         logger.warn(str(e))
         return False, "Unknown Error"
 
@@ -373,8 +385,8 @@ def get_ping_urls(url):
     
     try:
         logger.info("Trying to contact: %s" % url)
-        txt = urllib.urlopen(url).read()
-    except exceptions.IOError, e:
+        txt = urlopen(url).read()
+    except builtins.IOError as e:
         logger.warn("Failed to open %s: IOError" % str(url))
         return [], []
     logger.debug("Got %d bytes" % len(txt))
@@ -397,7 +409,7 @@ def get_ping_urls(url):
             logger.debug( "URL: %s" % rdfdata.attrs.get('dc:identifier'))
             logger.debug("Trackback URL: %s" % rdfdata.attrs.get('trackback:ping'))
             tb_urls.append(rdfdata.attrs.get('trackback:ping'))
-        except Exception,e:
+        except Exception as e:
             logger.warn(e)
     
     return ping_urls, tb_urls
@@ -429,6 +441,6 @@ class RDF(ContentHandler):
 if __name__=='__main__':
     tb_test_url = "http://jaksrv.local/mt/2007/03/test_fo_die_trackabacakas.html"
     ping_test_url = "http://rubeon.ath.cx/wp/?p=29"
-    print get_ping_urls(tb_test_url)
-    print get_ping_urls(ping_test_url)
+    print(get_ping_urls(tb_test_url))
+    print(get_ping_urls(ping_test_url))
     

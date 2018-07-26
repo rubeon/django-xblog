@@ -8,13 +8,17 @@ Models and functions for tracking XBlog Objects:
 
 """
 import logging
-import urlparse
 import os
 import string
-import BeautifulSoup
+import bs4
 import markdown2
 import django.utils.timezone
+import random
 
+try:
+    from urllib.parse import urlparse, urljoin
+except ImportError:
+     from urlparse import urlparse, urljoin
 from django.db import models
 # from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
@@ -30,7 +34,7 @@ from django.db.models.signals import post_save
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 # from django.contrib.auth import get_user_model
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from .external.postutils import SlugifyUniquely
 from .external import fuzzyclock
@@ -63,11 +67,12 @@ def random_string(length=24):
     an API key, for example.
     """
     # create a pool of 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    pool = list(string.uppercase) + list(string.lowercase) + [str(i) for i in range(0, 10)]
+    pool = list(string.ascii_uppercase) + list(string.ascii_lowercase) + [str(i) for i in range(0, 10)]
     # hmm... wouldn't it have been shorter to set pool to
     # ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ?
     # next time...
-    res = "".join([pool[ord(c) % len(pool)] for c in os.urandom(length)])
+    # res = "".join([pool[ord(c[0])) % len(pool)] for c in os.urandom(length)])
+    res = ''.join(random.choice(pool) for _ in range(length))
     return res
 
 STATUS_CHOICES = (('draft', 'Draft'), ('publish', 'Published'), ('private', 'Private'))
@@ -131,7 +136,7 @@ class LinkCategory(models.Model):
     title = models.CharField(blank=True, max_length=255)
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
-    blog = models.ForeignKey('Blog')
+    blog = models.ForeignKey('Blog', on_delete=models.CASCADE)
     display_order = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
@@ -153,10 +158,10 @@ class Link(models.Model):
 
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
-    blog = models.ForeignKey('Blog')
+    blog = models.ForeignKey('Blog', on_delete=models.CASCADE)
     rss = models.URLField(blank=True)
 
-    category = models.ForeignKey('LinkCategory')
+    category = models.ForeignKey('LinkCategory', on_delete=models.CASCADE)
 
     def __str__(self):
         return "%s (%s)" % (self.link_name, self.url)
@@ -169,7 +174,7 @@ class Pingback(models.Model):
 
     author_name = models.CharField(blank=True, max_length=100)
     author_email = models.EmailField(blank=True)
-    post = models.ForeignKey('Post')
+    post = models.ForeignKey('Post', on_delete=models.CASCADE)
     title = models.CharField(blank=True, max_length=255)
     body = models.TextField(blank=True)
     is_public = models.BooleanField(default=False)
@@ -224,7 +229,7 @@ class Author(models.Model):
                                height_field='avatar_height',
                                width_field='avatar_width')
     # user = models.ForeignKey(User, unique=True)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     about = models.TextField(blank=True)
     avatar_height = models.IntegerField(blank=True, null=True)
     avatar_width = models.IntegerField(blank=True, null=True)
@@ -273,7 +278,7 @@ class Category(models.Model):
     """
     title = models.CharField(blank=False, max_length=255)
     description = models.CharField(blank=True, max_length=100)
-    blog = models.ForeignKey("Blog")
+    blog = models.ForeignKey('Blog', on_delete=models.CASCADE)
     slug = models.SlugField(max_length=100)
 
     def __unicode__(self):
@@ -283,7 +288,7 @@ class Category(models.Model):
         """
         setting absolute will prepened host's URL
         """
-        local_url = urlparse.urljoin(self.blog.get_absolute_url(), self.slug)
+        local_url = urljoin(self.blog.get_absolute_url(), self.slug)
         # dumb
         if local_url[-1] != "/":
             local_url = local_url + "/"
@@ -327,11 +332,12 @@ class Post(models.Model):
     primary_category_name = models.ForeignKey(Category,
                                               related_name='primary_category_set',
                                               blank=True,
+                                              on_delete=models.CASCADE,
                                               null=True)
     tags = models.ManyToManyField(Tag, blank=True)
-    blog = models.ForeignKey('Blog')
+    blog = models.ForeignKey('Blog', on_delete=models.CASCADE)
     # author = models.ForeignKey(User)
-    author = models.ForeignKey('Author')
+    author = models.ForeignKey('Author', on_delete=models.CASCADE)
     status = models.CharField(blank=True,
                               null=True,
                               max_length=32,
@@ -390,7 +396,7 @@ class Post(models.Model):
         logging.debug("Got target text: starts at %s", str(start_idx))
         logging.debug("Ends at %s", str(end_idx))
         logging.debug("Got: %s", text[start_idx:end_idx])
-        soup = BeautifulSoup.BeautifulSoup(text)
+        soup = bs4.BeautifulSoup(text)
         tags = []
         for anchor in soup.findAll('a'):
             if "http://www.technorati.com/tag/" in anchor.get('href'):
@@ -493,13 +499,13 @@ class Post(models.Model):
         """
         returns url for trackback pings.
         """
-        return urlparse.urljoin(self.get_absolute_uri(), "trackback/")
+        return urljoin(self.get_absolute_uri(), "trackback/")
 
     def get_absolute_uri(self):
         """
         returns a url for the public interweb
         """
-        # uri = urlparse.urljoin(self.blog.get_url(), self.get_absolute_url())
+        # uri = urllib.parse.urljoin(self.blog.get_url(), self.get_absolute_url())
         return self.get_absolute_url()
 
     # will standardize on this in the future
@@ -625,8 +631,8 @@ class Blog(models.Model):
     """
     title = models.CharField(blank=True, max_length=100)
     description = models.TextField(blank=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL)
-    site = models.ForeignKey(Site)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE)
     slug = models.SlugField(max_length=100)
 
     objects = models.Manager()
