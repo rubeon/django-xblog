@@ -19,7 +19,8 @@ def calculate_readability(post):
         res['flesch_reading_ease'] = textstat.textstat.flesch_reading_ease(text)
         res['smog'] = textstat.textstat.smog_index(text)
         res['coleman_liau'] = textstat.textstat.coleman_liau_index(text)
-        res['consensus'] = textstat.textstat.readability_consensus(text)
+        res['flesch_kincaid_grade'] = textstat.textstat.flesch_kincaid_grade(text)
+
     except Exception as e:
         import traceback, sys
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -40,7 +41,6 @@ def main(test_data):
     print(textstat.textstat.difficult_words(test_data))
     print(textstat.textstat.linsear_write_formula(test_data))
     print(textstat.textstat.gunning_fog(test_data))
-    print(textstat.textstat.readability_consensus(test_data))
 
 if __name__ == '__main__':
     test_data = """Man oh man, these politicians have gotten my blood all angried up. I mean, how

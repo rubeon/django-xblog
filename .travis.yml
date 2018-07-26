@@ -6,6 +6,10 @@ install:
 script:
   - python runtests.py
 
+python:
+  - "2.7"
+  - "3.7"
+
 deploy:
   provider: pypi
   user: rubeon
