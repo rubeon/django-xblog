@@ -1,14 +1,8 @@
-{% load static %}
-{% load bootstrap3 %}
 <article>
-	<header>
-		<h3><a href="{{ object.get_absolute_url }}">{{ object.title}}</a></h3>
-		<h5><span class="glyphicon glyphicon-time"></span>&nbsp;{{ object.author.get_fullname }} | {{ object.pub_date|date:"j F, Y" }}</h5>
-		{% if disqus_identifier %}
-		<!-- disqus coments -->
-		<h5><span class="glyphicon glyphicon-comment"></span>&nbsp;<a disqus-comment-count data-disqus-identifier="{{ object.get_absolute_url }}" href="{{ object.get_absolute_uri }}" >Meh</a>
-		{% endif %}
-		<h5>{% for tag in object.tags.all %}<a href="{{ tag.get_absolute_url }}">{{ tag.title }}</a><span class="glyphicon glyphicon-tag"></span>&nbsp;{% endfor %}</h5>
-	</header>
-	{{ object.full_body|safe }}
+<header>
+<h1><a href="{{ object.get_absolute_url }}">{{ object.title}}</a></h1>
+<h3>{{ object.author.get_fullname }} | {{ object.pub_date|date:"j F, Y" }}</h3>
+<h3>{% for tag in object.tags.all %}<a href="{{ tag.get_absolute_url }}">{{ tag.title }}</a>{% endfor %}</h3>
+</header>
+{{ object.full_body|safe }}
 </article>
