@@ -239,7 +239,7 @@ class MetaWeblogTestCase(TestCase):
         post = self.s.metaWeblog.getPost(res, username, password)
 
         self.assertEqual(res, post['postid'])
-        for field in POST_CONTENT.keys():
+        for field in list(POST_CONTENT.keys()):
             if post.get(field):
                     self.assertEqual(POST_CONTENT['title'], post['title'])
                     self.assertEqual(POST_CONTENT['description'], post['description'])
@@ -474,9 +474,9 @@ class MetaWeblogTestCase(TestCase):
         struct =  {
             'post_status': 'publish',
             'mt_keywords': ['IFTTT', 'Twitter'],
-            'description': u'<blockquote class="twitter-tweet"><p lang="en" dir="ltr">The software development process<br><br>i can\u2019t fix this<br><br>*crisis of confidence*<br>*questions career*<br>*questions life*<br><br>oh it was a typo, cool</p>&mdash; I Am Devloper (@iamdevloper) <a href="https://twitter.com/iamdevloper/status/694848050796212224">February 3, 2016</a></blockquote>\n<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>',
+            'description': '<blockquote class="twitter-tweet"><p lang="en" dir="ltr">The software development process<br><br>i can\u2019t fix this<br><br>*crisis of confidence*<br>*questions career*<br>*questions life*<br><br>oh it was a typo, cool</p>&mdash; I Am Devloper (@iamdevloper) <a href="https://twitter.com/iamdevloper/status/694848050796212224">February 3, 2016</a></blockquote>\n<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>',
             'categories': ['Status'],
-            'title': u'RT @iamdevloper: The software development process i can\u2019t fix this *crisis of confidence* *questions career* *questions life* oh it was a typo, cool'
+            'title': 'RT @iamdevloper: The software development process i can\u2019t fix this *crisis of confidence* *questions career* *questions life* oh it was a typo, cool'
         }
 
         res = self.s.metaWeblog.newPost(blogid, username, password, struct)

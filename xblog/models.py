@@ -8,7 +8,6 @@ Models and functions for tracking XBlog Objects:
 
 """
 import logging
-import urllib.parse
 import os
 import string
 import bs4
@@ -16,6 +15,10 @@ import markdown2
 import django.utils.timezone
 import random
 
+try:
+    from urllib.parse import urlparse, urljoin
+except ImportError:
+     from urlparse import urlparse, urljoin
 from django.db import models
 # from django.core.mail import send_mail
 from django.core.exceptions import PermissionDenied
@@ -285,7 +288,7 @@ class Category(models.Model):
         """
         setting absolute will prepened host's URL
         """
-        local_url = urllib.parse.urljoin(self.blog.get_absolute_url(), self.slug)
+        local_url = urljoin(self.blog.get_absolute_url(), self.slug)
         # dumb
         if local_url[-1] != "/":
             local_url = local_url + "/"
@@ -496,7 +499,7 @@ class Post(models.Model):
         """
         returns url for trackback pings.
         """
-        return urllib.parse.urljoin(self.get_absolute_uri(), "trackback/")
+        return urljoin(self.get_absolute_uri(), "trackback/")
 
     def get_absolute_uri(self):
         """

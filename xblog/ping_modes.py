@@ -14,11 +14,23 @@ from xblog.models import Pingback, Post
 from django.conf import settings
 import datetime
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-import xmlrpc
+try:
+    import xmlrpc
+except ImportError:
+    import xmlrpclib as xmlrpc
 import urllib, re
+
+try:
+    from urllib import urlopen
+except ImportError:
+    from urllib.request import urlopen
+
 # from external.BeautifulSoup import BeautifulSoup as bs
-import bs4
-import builtins
+from bs4 import BeautifulSoup as bs
+try:
+    import builtins
+except ImportError:
+    import exceptions as builtins
 import logging
 logger = logging.getLogger(__name__)
 
@@ -184,9 +196,9 @@ def get_pingback_url(target_url):
     """
     logger.debug("get_pingback_url called...")
     logger.debug("grabbing " + str(target_url))
-    html = urllib.urlopen(target_url).read()
+    html = urlopen(target_url).read()
     logger.info( "Got %d bytes" % len(html))
-    soup = bs4(html)
+    soup = bs(html)
     # check for link tags...
     pbaddress = None
     for l in soup.findAll('link'):
@@ -201,8 +213,8 @@ def confirm_pingback(target_url, search_url, check_spam=True):
     # target url must contain search_url
     # returns bool is_spam, struct  
     logger.debug("Loading external page: %s" % target_url)
-    text = urllib.urlopen(target_url).read()
-    soup = bs4(text)
+    text = urlopen(target_url).read()
+    soup = bs(text)
     logger.info("Checking for URL: %s" % str(search_url))
     for a in soup.findAll('a'):
         if not check_spam or a.get('href') == search_url:
@@ -227,7 +239,7 @@ def send_pings(post):
         # check for outgoing links.
         target_urls = []
         logger.debug("post.body")
-        soup = bs4(post.get_formatted_body())
+        soup = bs(post.get_formatted_body())
         logger.debug(str(soup))
         for a in soup.findAll('a'):
             target_url = a.get('href',None)
@@ -293,7 +305,7 @@ def trackback_ping(source_uri, target_uri, check_spam=True, post=None, outgoing=
                 # s = xmlrpclib.ServerProxy(pingback_address)
                 # res = s.pingback.ping(source_uri, target_uri)
                 data = dict(title=p.title, url=source_uri, excerpt=p.summary,blog_name=p.blog.title)
-                res = urllib.urlopen(target_uri, urllib.urlencode(data)).read()
+                res = urlopen(target_uri, urllib.urlencode(data)).read()
                 logger.info("Got back %s" % str(res))
                 struct = {}
                 try:
@@ -373,12 +385,12 @@ def get_ping_urls(url):
     
     try:
         logger.info("Trying to contact: %s" % url)
-        txt = urllib.urlopen(url).read()
+        txt = urlopen(url).read()
     except builtins.IOError as e:
         logger.warn("Failed to open %s: IOError" % str(url))
         return [], []
     logger.debug("Got %d bytes" % len(txt))
-    soup = bs4(txt)
+    soup = bs(txt)
     # walk through the links, looking for ping-entries
     
     for a in soup.findAll('link'):

@@ -100,7 +100,7 @@ class IndexViewsTestCase(BlogViewsBaseCase):
 
         url = self.post.get_year_archive_url()
         response = self.client.get(url)
-        self.assertIn(self.post.title, response.content)
+        self.assertContains(response, self.post.title)
 
     def test_monthArchive(self):
         """
@@ -115,9 +115,8 @@ class IndexViewsTestCase(BlogViewsBaseCase):
         #                })
         url = self.post.get_month_archive_url()
         response = self.client.get(url)
-        LOGGER.debug("XXX" + response.content)
-        LOGGER.debug(response.content)
-        self.assertIn(self.post.title, response.content)
+        LOGGER.debug("XXX" + str(response))
+        self.assertContains(response, self.post.title)
 
     def test_indexPage(self):
         """
@@ -128,7 +127,7 @@ class IndexViewsTestCase(BlogViewsBaseCase):
         self.post.status = 'publish'
         self.post.save()
         response = self.client.get('/blog/')
-        self.assertIn(self.post.title, response.content)
+        self.assertContains(response, self.post.title)
         # how to debug the loading stuff
         # except TemplateDoesNotExist, e:
         #         for tmpl, msg in e.tried:
