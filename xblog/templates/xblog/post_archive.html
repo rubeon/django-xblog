@@ -2,7 +2,7 @@
 {% load markdown_deux_tags %}
 {% block blogheaders %}<meta name="description" content="{{ site.name }} Archive: Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}" />{% endblock %}
 {% block maincontent %}
-	<!-- begin main blog overview -->
+<!-- begin main blog overview -->
 {% if object.post_format == 'video' %}
 <!-- a video! -->
 {% include "includes/video_template.txt" %}

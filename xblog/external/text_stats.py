@@ -11,9 +11,6 @@ def calculate_readability(post):
     """
     full_text = post.get_full_body()
     text = html2text(full_text)
-    logger.debug("FULL_TEXT:\n" + full_text)
-    logger.debug("TEXT:\n" + text)
-    
     res = {}
     try:
         res['flesch_reading_ease'] = textstat.textstat.flesch_reading_ease(text)

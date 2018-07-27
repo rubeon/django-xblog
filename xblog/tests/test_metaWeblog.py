@@ -76,8 +76,8 @@ class MetaWeblogTestCase(TestCase):
         self.test_user1 = User.objects.create(
             username="test_user1",
             first_name="Test",
-            last_name="User2",
-            email="testuser@example.com",
+            last_name="User1",
+            email="testuser1@example.com",
             password="MyTestPass1",
             is_staff=False,
             is_superuser=False
@@ -122,6 +122,11 @@ class MetaWeblogTestCase(TestCase):
         self.test_category1 = Category.objects.create(
             title="Test Category 1",
             description="Category mean namely for testing",
+            blog = self.test_blog
+        )
+        self.test_category2 = Category.objects.create(
+            title="Test Category 2",
+            description="",
             blog = self.test_blog
         )
 
@@ -348,6 +353,32 @@ class MetaWeblogTestCase(TestCase):
 
         self.assertEquals(post.title, new_content['title'])
 
+    def test_editPost_own_publish(self):
+        """
+        Admin User should be able to edit others' posts
+        """
+        post = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author
+        )
+        post.save()
+        # # now try to delete it as other user
+        appkey = 0
+        username = self.test_user1.username
+        password = self.test_user1.author.remote_access_key
+        postid = post.id
+        publish = True
+        new_content = POST_CONTENT.copy()
+        new_content['title']="This is the new title"
+        res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
+
+        post = Post.objects.get(id=postid)
+
+        self.assertEquals(post.title, new_content['title'])
+        self.assertTrue(post.status, 'publish')
+
     def test_editPost_admin(self):
         """
         Admin User should be able to edit others' posts
@@ -364,12 +395,19 @@ class MetaWeblogTestCase(TestCase):
         username = self.test_admin.username
         password = self.test_admin.author.remote_access_key
         postid = post.id
-        publish = False
+
         new_content = POST_CONTENT.copy()
         new_content['title']="This is the new title"
-        res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
-        post = Post.objects.get(id=postid)
-        self.assertEquals(post.title, new_content['title'])
+
+        for publish in [True, False]:
+            if publish:
+                status='publish'
+            else:
+                status = 'draft'
+            res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
+            post = Post.objects.get(id=postid)
+            self.assertEquals(post.title, new_content['title'])
+            self.assertTrue(post.status==status)
 
     # metaWeblog.getCategories
     def test_getCategories_own_blog(self):
@@ -387,11 +425,27 @@ class MetaWeblogTestCase(TestCase):
 
             self.assertEqual(str(local_cat.id), cat['categoryId'])
             self.assertEqual(local_cat.title, cat['categoryName'])
-            self.assertEqual(local_cat.description, cat['categoryDescription'])
-            self.assertEqual(local_cat.description, cat['description'])
+            # metaWeblog returns title as category description if it is empty
+            if local_cat.description != '':
+                self.assertEqual(local_cat.description, cat['categoryDescription'])
+                self.assertEqual(local_cat.description, cat['description'])
+            else:
+                self.assertEqual(local_cat.title, cat['categoryDescription'])
+                self.assertEqual(local_cat.title, cat['description'])
+                
             self.assertIn(local_cat.get_absolute_url(), cat['htmlUrl'])
             # FIXME: need to update once feeds have been done...
             self.assertIn(local_cat.get_absolute_url()+"feed/", cat['rssUrl'])
+
+    def test_getCategories_other_blog(self):
+        """
+        Should return a valid list of categories for this user's blog
+        """
+        blogid = self.test_blog.id
+        username = self.rogue_user.username
+        password = self.rogue_user.author.remote_access_key
+        with self.assertRaisesRegex(Fault, 'Permission denied for'):
+            cats = self.s.metaWeblog.getCategories(blogid, username, password)
 
     # metaWeblog.getRecentPosts
     def test_getRecentPosts_own_blog(self):
@@ -486,3 +540,27 @@ class MetaWeblogTestCase(TestCase):
         self.assertEqual(p.body, struct['description'])
 
     # metaWeblog.newMediaObject
+
+    def test_edit_post_not_my_post(self):
+        """
+        Need to make sure you can't edit other people's posts!
+        """
+        post = Post.objects.create(
+            title = "Test User 1 Post",
+            body = "This is some stuff.\n\nSome stuff, you know.",
+            blog = self.test_blog,
+            author = self.test_user1.author
+        )
+        post.save()
+        # # now try to delete it as other user
+        appkey = 0
+        username = self.rogue_user.username
+        password = self.rogue_user.author.remote_access_key
+        postid = post.id
+        publish = False
+        new_content = POST_CONTENT.copy()
+        keywords = "One Tag, Two Tag, Red Tag, Blue Tag"
+        new_content['mt_keywords']=keywords
+        with self.assertRaisesRegex(Fault, 'Permission denied for'):
+            res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
+        

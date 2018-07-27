@@ -137,10 +137,7 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
         send_pings(post)
     except Exception as e:
         LOGGER.warn('send_pings failed: %s', )
-        print("Exception in user code:")
-        print("-"*60)
         traceback.print_exc(file=sys.stdout)
-        print("-"*60)
         raise Fault(500, str(e))
     LOGGER.debug("newPost finished")
     return post.id
@@ -268,6 +265,7 @@ def getCategories(blogid, username, password):
         else:
             struct['categoryDescription'] = c.description
         struct['description'] = struct['categoryDescription']
+        LOGGER.warn('STRUCT: %s', str(struct))
         struct['htmlUrl'] = "http://%s/%s" % (Site.objects.get_current().domain, c.get_absolute_url())
         struct['rssUrl'] = "http://%s/%sfeed/" % (Site.objects.get_current().domain, c.get_absolute_url())
         res.append(struct)

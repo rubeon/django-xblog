@@ -21,7 +21,7 @@ from ..forms import PostCreateForm
 
 from django.contrib.sites.models import Site
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('xblog')
 
 def xhr_tags(request): 
     logger.debug("%s.xhr_tags entered" % __name__)

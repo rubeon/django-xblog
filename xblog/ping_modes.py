@@ -232,15 +232,17 @@ def confirm_pingback(target_url, search_url, check_spam=True):
 
 def send_pings(post):
     logger.debug("send_pings entered")
-    logger.debug("No really, sending pings")
     if settings.DEBUG:
         logger.debug("Not sending pings in debug")
         return
+    logger.debug("No really, sending pings")
     if post.status=='publish':
         # check for outgoing links.
         logger.debug('Post status is: %s', post.status)
         target_urls = []
-        logger.debug(post.body)
+        logger.debug(60*'-')
+        logger.debug('Post body: %s', post.body)
+        logger.debug(60*'-')
         soup = bs(post.get_formatted_body(), 'html.parser')
         logger.debug("Got soup %s", soup)
         for a in soup.findAll('a'):
@@ -390,6 +392,9 @@ def get_ping_urls(url):
         txt = str(urlopen(url).read())
     except builtins.IOError as e:
         logger.warn("Failed to open %s: IOError" % str(url))
+        return [], []
+    except ValueError as e:
+        logger.warn('Received a bad URL: %s', url)
         return [], []
     logger.debug("Got %d bytes" % len(txt))
     soup = bs(txt, 'html.parser')

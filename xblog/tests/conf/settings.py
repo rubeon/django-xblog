@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     'markdown_deux',
     'django_xmlrpc'
 ]
-DEBUG=True
+DEBUG=False
 SITE_ID=1
 ROOT_URLCONF = 'xblog.tests.conf.urls'
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -59,43 +59,50 @@ LOGGING = {
     'version': 1,
     'formatters': {
         'verbose': {
-            'format': '[%(levelname)-10s] [%(asctime)20s][ %(module)-20s] %(process)d %(thread)d %(message)s'
+            'format': '[%(levelname)-7s][ %(module)-10s] %(message)s'
         },
         'simple': {
-            'format': '[%(levelname)10s][%(module)s] %(message)s'
+            'format': '[%(levelname)-7s][%(module)-10s] %(message)s'
         },
         'testing': {
-            'format': '[%(levelname)s][%(module)s] %(message)s'
+            'format': '[%(levelname)-7s][%(module)-10s] %(message)s'
         }
     },
     'handlers': {
         'console': {
-            'level': 'WARN',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
+            'formatter': 'simple'
             },
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'test_output.log'),
-            'formatter': 'verbose'
+            'formatter': 'simple'
             },
         },
     'loggers': {
         'django': {
             'handlers': ['console'],
             'level': 'DEBUG',
-            'propagate': True,
-            },
+        },
         'xblog': {
-            'handlers': ['file'],
+            'handlers': ['console'],
             'level': 'DEBUG',
-            'propogate': True,
-        }
-        }
+        },
+        
+    }
+}
+
+for mymodule in ['xblog', 'xblog.models', 'xblog.views.metaWeblog']:
+    LOGGING['loggers'][mymodule] = {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
     }
 
-if DEBUG:
-    # make all loggers use the console.
-    for logger in LOGGING['loggers']:
-        LOGGING['loggers'][logger]['handlers'] = ['console']
+
+# if DEBUG:
+#     # make all loggers use the console.
+#     for logger in LOGGING['loggers']:
+#         LOGGING['loggers'][logger]['handlers'] = ['console']

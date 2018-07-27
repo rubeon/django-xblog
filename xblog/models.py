@@ -50,7 +50,8 @@ def create_profile(*args, **kwargs):
     Creates a user profile for new users
     assigns an author instance
     """
-    LOGGER.debug(str(args))
+    LOGGER.debug('%s.create_profile entered', __name__)
+    LOGGER.debug('args: %s', str(args))
     user = kwargs["instance"]
     # if kwargs["created"]:
     #     # check if the profile already exists
@@ -98,7 +99,7 @@ def get_markdown(data):
     # res = m.toString()
     # res = smartyPants(res, "1qb")
     """
-    LOGGER.debug("get_markdown entered")
+    LOGGER.debug("%s.get_markdown entered", __name__)
     res = markdown2.markdown(data, extras=['footnotes', 'fenced-code-blocks', 'smartypants'])
     # LOGGER.debug("res: %s" % res)
     return res
@@ -111,7 +112,7 @@ def get_html(data):
     might be a good place to clean up / validate HTML to
     keep it from breaking the site..?
     """
-    LOGGER.debug("get_html entered")
+    LOGGER.debug("%s.get_html entered", __name__)
     # just return it.
     # maybe tidy it up or something...
     # data = smartyPants(data, "1qb")
@@ -124,7 +125,7 @@ def convert_linebreaks(data):
     The most basic filter, just translates linebreaks to
     <br>'s.  This is pants.
     """
-    LOGGER.debug("convert_linebreaks entered")
+    LOGGER.debug("%s.convert_linebreaks entered", __name__)
     data = linebreaks(data)
     # return smartyPants(data,"1qb")
     return data
@@ -208,8 +209,8 @@ Target URL: %s
       Time: %s
             """ % (self.source_url, self.target_url, self.pub_date)
 
-        LOGGER.debug(mail_subject)
-        LOGGER.debug(mail_body)
+        LOGGER.debug('mail_subject: %s', mail_subject)
+        LOGGER.debug('mail_body: %s', mail_body)
         # mail_managers(mail_subject, mail_body, fail_silently=False)
         # send_mail(mail_subject, mail_body, "eric@xoffender.de", [self.post.author.email])
 
@@ -583,9 +584,9 @@ class Post(models.Model):
         LOGGER.debug("get_video_body entered: %s", str(self))
         video_url = self.body.split("\n")[0]
         if video_url.startswith("http"):
-            LOGGER.debug("video_url: %s", video_url)
-            if video_url.find("vimeo.com") > -1:
-                LOGGER.debug("Got vimeo link")
+            LOGGER.debug('video_url: %s', video_url)
+            if video_url.find('vimeo.com') > -1:
+                LOGGER.debug('Got vimeo link')
                 # naive ID finder...
                 video_id = video_url.split("/")[-1]
                 video_link = """<iframe src="//player.vimeo.com/video/%s"
@@ -601,7 +602,7 @@ class Post(models.Model):
         """
         Whimsical display of time, not really used any more
         """
-        LOGGER.debug("get_fuzzy_pub_date entered for %s", str(self))
+        LOGGER.debug('get_fuzzy_pub_date entered for %s', str(self))
         hour = self.pub_date.hour
         minute = self.pub_date.minute
         fclock = fuzzyclock.FuzzyClock()
@@ -623,7 +624,7 @@ class Post(models.Model):
         broken for most text, like anything with Umlauts.
         FIXME: Get a good readability module from somewhere.
         """
-        LOGGER.debug("get_readability entered for %s", str(self))
+        LOGGER.debug('get_readability entered for %s', str(self))
         my_readability = text_stats.calculate_readability(self)
         return my_readability
 
@@ -664,17 +665,17 @@ class Blog(models.Model):
         """
         save override for Blog Model
         """
-        LOGGER.debug("%s.Blog.save entered %s", __name__, self.title)
+        LOGGER.debug('%s.Blog.save entered %s', __name__, self.title)
         if not self.slug or self.slug == '':
             slug = SlugifyUniquely(self.title, self.__class__)
-            LOGGER.debug("Slug not given, setting to %s", slug)
+            LOGGER.debug('Slug not given, setting to %s', slug)
             self.slug = slug
 
         super(Blog, self).save(force_insert=force_insert,
                                force_update=force_update,
                                using=using,
                                update_fields=update_fields)
-        LOGGER.debug("blog.save complete")
+        LOGGER.debug('blog.save complete')
 
 
 class PostForm(ModelForm):
@@ -694,7 +695,7 @@ def check_status_category(sender, **kwargs):
     accordingly
     """
     LOGGER.debug('XXcheck_status_category entered')
-    LOGGER.debug(sender)
+    LOGGER.debug('sent by %s', sender)
     instance = kwargs.pop('instance', None)
     action = kwargs.pop('action', None)
     pk_set = kwargs.pop('pk_set', None)
