@@ -46,7 +46,10 @@ except ImportError:  # Python 2
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 # this is for getting the URL of xmlrpc endpoing
-from django.urls import reverse
+try:
+    from django.urls import reverse
+except ImportError: # django < 2
+    from django.core.urlresolvers import reverse
 
 import logging
 logger = logging.getLogger(__name__)

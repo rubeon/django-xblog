@@ -198,7 +198,7 @@ def get_pingback_url(target_url):
     logger.debug("grabbing " + str(target_url))
     html = urlopen(target_url).read()
     logger.info( "Got %d bytes" % len(html))
-    soup = bs(html)
+    soup = bs(html, 'html.parser')
     # check for link tags...
     pbaddress = None
     for l in soup.findAll('link'):
@@ -214,7 +214,7 @@ def confirm_pingback(target_url, search_url, check_spam=True):
     # returns bool is_spam, struct  
     logger.debug("Loading external page: %s" % target_url)
     text = urlopen(target_url).read()
-    soup = bs(text)
+    soup = bs(text, 'html.parser')
     logger.info("Checking for URL: %s" % str(search_url))
     for a in soup.findAll('a'):
         if not check_spam or a.get('href') == search_url:
@@ -232,22 +232,24 @@ def confirm_pingback(target_url, search_url, check_spam=True):
 
 def send_pings(post):
     logger.debug("send_pings entered")
+    logger.debug("No really, sending pings")
     if settings.DEBUG:
-        logger.warn("Not sending pings in debug")
+        logger.debug("Not sending pings in debug")
         return
     if post.status=='publish':
         # check for outgoing links.
+        logger.debug('Post status is: %s', post.status)
         target_urls = []
-        logger.debug("post.body")
-        soup = bs(post.get_formatted_body())
-        logger.debug(str(soup))
+        logger.debug(post.body)
+        soup = bs(post.get_formatted_body(), 'html.parser')
+        logger.debug("Got soup %s", soup)
         for a in soup.findAll('a'):
             target_url = a.get('href',None)
             if target_url:
                 logger.info( "Got URL:" + a.get('href'))
                 target_urls.append(target_url)
         
-        logger.info("Checking out %d url(s)" % len(target_urls))
+        logger.debug("Checking out %d url(s)" % len(target_urls))
         for url in target_urls:
             pb_urls, tb_urls = get_ping_urls(url)
             for pb in pb_urls:
@@ -379,28 +381,29 @@ def get_ping_urls(url):
     """
     returns a two-tuple of lists, ([pingback urls],[trackback urls])
     """
-    logger.debug("get_ping_urls called: %s" % url)
+    logger.debug('get_ping_urls called: %s', url)
     ping_urls = []
     tb_urls = []
     
     try:
-        logger.info("Trying to contact: %s" % url)
-        txt = urlopen(url).read()
+        logger.debug('Trying to contact: %s', url)
+        txt = str(urlopen(url).read())
     except builtins.IOError as e:
         logger.warn("Failed to open %s: IOError" % str(url))
         return [], []
     logger.debug("Got %d bytes" % len(txt))
-    soup = bs(txt)
+    soup = bs(txt, 'html.parser')
     # walk through the links, looking for ping-entries
     
     for a in soup.findAll('link'):
-        logger.debug(a)
+        logger.debug('link: %s', a)
         rel = a.get('rel')
         if rel == 'pingback':
-            logger.info("Got pingback URL: %s" % a.href)
+            logger.debug("Got pingback URL: %s" % a.href)
             ping_urls.append(a.get('href'))
     
     # now do t he trackbacks...
+    logger.debug('Got the following pingback URLs: [%s]', ping_urls)
     tb_re=re.compile('(<rdf:RDF .*?</rdf:RDF>)')
     rdfdata = RDF()
     for x in tb_re.findall(txt.replace('\n',' ')):
@@ -410,7 +413,7 @@ def get_ping_urls(url):
             logger.debug("Trackback URL: %s" % rdfdata.attrs.get('trackback:ping'))
             tb_urls.append(rdfdata.attrs.get('trackback:ping'))
         except Exception as e:
-            logger.warn(e)
+            logger.warn('get_ping_urls: %s', str(e))
     
     return ping_urls, tb_urls
 

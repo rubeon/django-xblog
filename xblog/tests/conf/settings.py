@@ -59,33 +59,36 @@ LOGGING = {
     'version': 1,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            'format': '[%(levelname)-10s] [%(asctime)20s][ %(module)-20s] %(process)d %(thread)d %(message)s'
         },
         'simple': {
-            'format': '%(levelname)s %(message)s'
+            'format': '[%(levelname)10s][%(module)s] %(message)s'
         },
+        'testing': {
+            'format': '[%(levelname)s][%(module)s] %(message)s'
+        }
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': 'WARN',
             'class': 'logging.StreamHandler',
-            'formatter': 'simple'
+            'formatter': 'verbose'
             },
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'file.log',
-            'formatter': 'simple'
+            'filename': os.path.join(BASE_DIR, 'test_output.log'),
+            'formatter': 'verbose'
             },
         },
     'loggers': {
         'django': {
-            'handlers': ['file'],
-            'level': 'WARN',
+            'handlers': ['console'],
+            'level': 'DEBUG',
             'propagate': True,
             },
         'xblog': {
-            'handlers': ['console', 'file'],
+            'handlers': ['file'],
             'level': 'DEBUG',
             'propogate': True,
         }

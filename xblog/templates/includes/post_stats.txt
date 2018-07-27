@@ -15,8 +15,5 @@
     <tr>
         <td>Coleman Liau:</td><td>{{ readability.coleman_liau }}</td>
     </tr>
-    <tr>
-        <td>Reader Index:</td><td> {{ readability.consensus }}</td>
-    </tr>            
 </table>
 {% endwith %}

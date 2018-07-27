@@ -5,6 +5,9 @@ Implementation of the metaWeblog XMLRPC API for XBlog.
 Factored out of ../metaWeblog.py for reasons.
 
 """
+
+import sys, traceback
+
 from django.conf import settings
 try:
     from django.contrib.auth import get_user_model
@@ -130,7 +133,15 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
     setTags(post, struct, key="mt_keywords")
     LOGGER.debug("Handling Pings")
     LOGGER.info("sending pings to host")
-    send_pings(post)
+    try:
+        send_pings(post)
+    except Exception as e:
+        LOGGER.warn('send_pings failed: %s', )
+        print("Exception in user code:")
+        print("-"*60)
+        traceback.print_exc(file=sys.stdout)
+        print("-"*60)
+        raise Fault(500, str(e))
     LOGGER.debug("newPost finished")
     return post.id
 

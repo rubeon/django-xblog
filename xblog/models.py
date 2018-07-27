@@ -34,8 +34,10 @@ from django.db.models.signals import post_save
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 # from django.contrib.auth import get_user_model
-from django.urls import reverse
-
+try:
+    from django.urls import reverse
+except ImportError: # django < 2
+    from django.core.urlresolvers import reverse
 from .external.postutils import SlugifyUniquely
 from .external import fuzzyclock
 from .external import text_stats
@@ -396,7 +398,7 @@ class Post(models.Model):
         logging.debug("Got target text: starts at %s", str(start_idx))
         logging.debug("Ends at %s", str(end_idx))
         logging.debug("Got: %s", text[start_idx:end_idx])
-        soup = bs4.BeautifulSoup(text)
+        soup = bs4.BeautifulSoup(text, 'html.parser')
         tags = []
         for anchor in soup.findAll('a'):
             if "http://www.technorati.com/tag/" in anchor.get('href'):
