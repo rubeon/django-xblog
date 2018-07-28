@@ -324,7 +324,7 @@ class Category(models.Model):
         if self.title != '':
             return str(self.title)
         else:
-            return super().__str__
+            return super(Category, self).__str__()
         
 
 @python_2_unicode_compatible
