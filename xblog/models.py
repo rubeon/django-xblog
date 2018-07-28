@@ -143,7 +143,11 @@ class LinkCategory(models.Model):
     display_order = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
-        return str(self.title)
+        if self.title != '':
+            return str(self.title)
+        else:
+            return str('Untitled Link Category %d' % self.id)
+    
     __repr__ = __str__
 
 
@@ -315,6 +319,13 @@ class Category(models.Model):
                                    update_fields=update_fields
                                   )
         LOGGER.debug("category.save complete")
+        
+    def __str__(self):
+        if self.title != '':
+            return str(self.title)
+        else:
+            return super().__str__
+        
 
 @python_2_unicode_compatible
 class Post(models.Model):
