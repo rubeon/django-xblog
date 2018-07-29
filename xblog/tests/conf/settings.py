@@ -17,7 +17,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'xblog',
-    'bootstrap3',
     'markdown_deux',
     'django_xmlrpc'
 ]
