@@ -7,11 +7,11 @@ Blogging application for your Django site
 
 ## Installation
 
-From github:
+Install from PyPi:
 
 ```bash
 
-    pip install https://github.com/rubeon/django-xblog/archive/master.zip
+    pip install django-xblog
 
 ```
 
@@ -39,6 +39,7 @@ After the above, go through the usual process:
 ```bash
 
 django-admin startproject mysite
+cd mysite/
 vi mysite/settings
 
 ```
@@ -49,13 +50,27 @@ Add the dependencies to `INSTALLED_APPS`:
         ...
         # following are for xblog
         'django.contrib.sites',
-        'bootstrap3',
         'markdown_deux',
         'xblog',
     ]
     # Define a site, if not done already!
     SITE_ID=1
+    MIDDLEWARE = [
+        # add sites middleware
+        # ...
+        'django.contrib.sites.middleware.CurrentSiteMiddleware',
+    ]
 
+```
+
+```bash
+
+./manage.py migrate
+./manage.py createsuperuser --username=admin --email=admin@example.com
+Password:
+Password (again):
+Superuser created successfully.
+./manage.py runserver 
 ```
 
 ## URL Setup
@@ -64,11 +79,12 @@ Add a place to your site's root `urls.py` reach your blog, and don't forget to
 add the `xblog` namespace:
 
 ```python
+    from django.urls import path, include
     import xblog.urls
 
     urlpatterns = [
-        url(r'^admin/', admin.site.urls),
-        url(r'^blog/', include(xblog.urls, namespace="xblog"),
+        path('admin/', admin.site.urls),
+        path('blog/', include(xblog.urls, namespace="xblog"),
     ]
 ```
 
