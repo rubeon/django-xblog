@@ -1,7 +1,7 @@
 import datetime
 from haystack import indexes
 # from myapp.models import Note
-from models import Blog, Post
+from .models import Blog, Post
 
 
 # class NoteIndex(indexes.SearchIndex, indexes.Indexable):
@@ -18,7 +18,6 @@ from models import Blog, Post
 #
 
 class PostIndex(indexes.SearchIndex, indexes.Indexable):
-
     text = indexes.CharField(document=True, use_template=True, model_attr='full_body')
     author = indexes.CharField(model_attr='author')
     pub_date = indexes.DateTimeField(model_attr='pub_date')
