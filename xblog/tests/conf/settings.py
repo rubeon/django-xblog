@@ -93,6 +93,11 @@ LOGGING = {
     }
 }
 
+MIDDLEWARE = ['django.contrib.sessions.middleware.SessionMiddleware',
+              'django.contrib.auth.middleware.AuthenticationMiddleware',
+              'django.contrib.messages.middleware.MessageMiddleware',      
+]
+
 for mymodule in ['xblog', 'xblog.models', 'xblog.views.metaWeblog']:
     LOGGING['loggers'][mymodule] = {
             'handlers': ['console'],

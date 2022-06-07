@@ -3,7 +3,7 @@
 Context processors for XBlog
 """
 import logging
-
+import django
 from django.contrib.sites.models import Site
 from django.conf import settings
 # from xblog.models import Blog
@@ -28,9 +28,12 @@ from django.conf import settings
 
 LOGGER = logging.getLogger(__name__)
 
+def django_version(request):
+    return { 'django_version': django.VERSION }
+
 def site(request):
     """
-    Addes the `site` variable to template contexts.  Why oh why
+    Adds the `site` variable to template contexts.  Why oh why
     has Django not added that in as a default?
     """
     LOGGER.debug("%s.site entered", __name__)

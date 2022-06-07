@@ -25,7 +25,10 @@ from django.core.exceptions import PermissionDenied
 from django.core.validators import MinLengthValidator
 from django.utils.text import Truncator
 from django.utils.html import linebreaks
-from django.utils.encoding import python_2_unicode_compatible
+try:
+    from django.utils.encoding import python_2_unicode_compatible
+except ImportError: # django < 3
+    from six import python_2_unicode_compatible
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager

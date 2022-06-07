@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load  blog_tags %}
-{% load staticfiles %}
+{% load static %}
 {% block extrahead %}
 <link rel="alternate" href="https://{{ site.domain }}{% url 'xblog:feed-posts' %}" type="application/rss+xml" title="RSS 2.0" />
 <link rel="EditURI" href="https://{{ site.domain }}{% url 'xmlrpc' %}" type="application/rsd+xml" title="RSD" />
