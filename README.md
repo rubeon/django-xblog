@@ -50,7 +50,7 @@ Add the dependencies to `INSTALLED_APPS`:
         ...
         # following are for xblog
         'django.contrib.sites',
-        'markdown_deux',
+        'markdown2',
         'xblog',
     ]
     # Define a site, if not done already!

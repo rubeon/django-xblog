@@ -36,6 +36,8 @@ from django.forms import ModelForm
 from django.db.models.signals import post_save
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from django.utils.text import slugify
+
 # from django.contrib.auth import get_user_model
 try:
     from django.urls import reverse
@@ -44,9 +46,10 @@ except ImportError: # django < 2
 from .external.postutils import SlugifyUniquely
 from .external import fuzzyclock
 from .external import text_stats
+import textstat
 
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger("xblog.__name__")
 
 def create_profile(*args, **kwargs):
     """
@@ -87,7 +90,8 @@ FORMAT_CHOICES = (('standard', 'Standard'), ('video', 'Video'), ('status', 'Stat
 FILTER_CHOICES = (
     ('markdown', 'Markdown'),
     ('html', 'HTML'),
-    ('convert linebreaks', 'Convert linebreaks')
+    ('convert linebreaks', 'Convert linebreaks'),
+    ('__default__', 'Default (HTML)'),
 )
 
 FILTERS = {}
@@ -104,7 +108,7 @@ def get_markdown(data):
     """
     LOGGER.debug("%s.get_markdown entered", __name__)
     res = markdown2.markdown(data, extras=['footnotes', 'fenced-code-blocks', 'smartypants'])
-    # LOGGER.debug("res: %s" % res)
+    LOGGER.debug("res: %s" % res)
     return res
 
 FILTERS['markdown'] = get_markdown
@@ -224,10 +228,15 @@ Target URL: %s
 class Tag(models.Model):
     """(Tag description)"""
     title = models.CharField(blank=True, max_length=100)
+    slug = models.SlugField(max_length=100)
     def __str__(self):
         # return "%s (%s - %s)" % (self.title, self.source_url, self.target_url)
         return self.title
     __unicode__ = __str__
+    
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.title)
+        super(Tag, self).save(*args, **kwargs)
 
 @python_2_unicode_compatible
 class Author(models.Model):
@@ -345,13 +354,13 @@ class Post(models.Model):
     guid = models.CharField(blank=True, max_length=255)
     body = models.TextField(blank=True)
     summary = models.TextField(blank=True)
-    categories = models.ManyToManyField(Category)
+    categories = models.ManyToManyField(Category, related_name="posts")
     primary_category_name = models.ForeignKey(Category,
                                               related_name='primary_category_set',
                                               blank=True,
                                               on_delete=models.CASCADE,
                                               null=True)
-    tags = models.ManyToManyField(Tag, blank=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
     blog = models.ForeignKey('Blog', on_delete=models.CASCADE)
     # author = models.ForeignKey(User)
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
@@ -396,7 +405,7 @@ class Post(models.Model):
             pass
         if not self.guid or self.guid == '':
             self.guid = self.get_absolute_url()
-
+        LOGGER.debug("prepoulate finished...")
     def handle_technorati_tags(self):
         """
         takes the post, and returns the technorati links in them...
@@ -540,6 +549,7 @@ class Post(models.Model):
             'month': self.pub_date.strftime("%b").lower(),
             'day': self.pub_date.day,
         }
+        LOGGER.debug(kwargs)
         return reverse("xblog:post-detail", kwargs=kwargs)
 
     def get_site_url(self):
@@ -639,7 +649,13 @@ class Post(models.Model):
         FIXME: Get a good readability module from somewhere.
         """
         LOGGER.debug('get_readability entered for %s', str(self))
-        my_readability = text_stats.calculate_readability(self)
+        # my_readability = text_stats.calculate_readability(self)
+        my_readability = {}
+        my_readability["flesch_reading_ease"] = textstat.flesch_reading_ease(self.full_body)
+        my_readability["flesch_kincaid_grade"] = textstat.flesch_kincaid_grade(self.full_body)
+        my_readability["smog"] = textstat.smog_index(self.full_body)
+        my_readability["coleman_liau"] = textstat.coleman_liau_index(self.full_body)
+        
         return my_readability
 
 class Blog(models.Model):

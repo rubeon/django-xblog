@@ -85,17 +85,21 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
     body = struct['description']
 
     user = get_user(username, password)
+    LOGGER.debug("User: %s", user)
     if not is_user_blog(user, blogid):
         # raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
-        raise Blog.DoesNotExist
-
+        logger.info("Blog %s for user %s not found!", (blogid, user))
+        
+    LOGGER.debug("proceeding")
     try:
         LOGGER.info("Checking for passed blog parameter")
-        blog = Blog.objects.get(pk=blogid)
-    except ValueError:
+        blog = Blog.objects.get(pk=int(blogid))
+    except Exception as e:
+        LOGGER.debug(e)
         # probably expecting wp behavior
         LOGGER.info("Specified blog not found, using default")
-        blog = Blog.objects.filter(owner=user)[0]
+        blog = Blog.objects.all()[0]
+        LOGGER.debug("Proceeding with blog %s", blog)
 
     pub_date = now()
 
@@ -143,11 +147,14 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
     return post.id
 
 
-def editPost(postid, username, password, struct, publish):
-    LOGGER.debug( "%s.editPost entered", __name__)
+def editPost(postid, username, password, struct, publish=None):
+    # def editPost(*args, **kwargs):
+    LOGGER.debug("editPost entered")
+    LOGGER.debug("struct: %s", struct)
+    # LOGGER.debug("args: %s", args)
     user = get_user(username, password)
     post = Post.objects.get(id=postid)
-
+    
     if post.author.user != user and not user.is_superuser:
         raise Fault(PERMISSION_DENIED, 'Permission denied for %s on post %s' % (user, postid))
 
@@ -185,7 +192,7 @@ def editPost(postid, username, password, struct, publish):
     if user:
         post.author = user.author
 
-    if publish:
+    if publish or struct.get('post_status', 'unknown').lower() == 'publish':
         post.status = "publish"
     else:
         post.status = "draft"
@@ -335,15 +342,21 @@ def getUsersBlogs(appkey, username, password):
     return res
 
 def setTags(post, struct, key="tags"):
-    LOGGER.debug( "%s.setTags entered", __name__)
+    LOGGER.debug("metaWeblog.setTags entered")
     tags = struct.get(key, None)
+    if type(tags) == type(""):
+        new_tags = tags.split(',')
+        tags = new_tags
+    LOGGER.debug("got tags: %s", tags)
     if tags is None:
         LOGGER.info("No tags set")
-        post.tags = []
     else:
         # post.categories = [Category.objects.get(title__iexact=name) for name in tags]
         LOGGER.info("Setting tags")
         for tag in tags:
+            if tag == '':
+                LOGGER.debug("skipping '%s'", tag)
+                continue
             LOGGER.debug("setting tag '%s'", tag)
             t, created = Tag.objects.get_or_create(title=tag.lower())
             if created:
@@ -354,8 +367,10 @@ def setTags(post, struct, key="tags"):
             post.tags.add(t)
             post.save()
         # LOGGER.debug("TAGS: %s" % str(tags))
-    # LOGGER.debug("Post Tags: %s", str(post.tags.all()))
+    
+    LOGGER.debug("Post Tags: %s", str(post.tags.all()))
     post.save()
+    
     return True
 
 # def post_struct(post):

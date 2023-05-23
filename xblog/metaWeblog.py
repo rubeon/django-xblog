@@ -275,6 +275,7 @@ def format_date(d):
 def setTags(post, struct, key="tags"):
     logger.debug( "setTags entered")
     tags = struct.get(key, None)
+    logger.debug("Got tags: %s", tags)
     if tags is None:
         logger.info("No tags set")
         post.tags = []
