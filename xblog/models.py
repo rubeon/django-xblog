@@ -58,6 +58,9 @@ def create_profile(*args, **kwargs):
     """
     LOGGER.debug('%s.create_profile entered', __name__)
     LOGGER.debug('args: %s', str(args))
+    if kwargs['raw']:
+        LOGGER.debug("Skipping create_profile due to loaddata")
+        return
     user = kwargs["instance"]
     # if kwargs["created"]:
     #     # check if the profile already exists
@@ -106,9 +109,9 @@ def get_markdown(data):
     # res = m.toString()
     # res = smartyPants(res, "1qb")
     """
-    LOGGER.debug("%s.get_markdown entered", __name__)
+    # LOGGER.debug("%s.get_markdown entered", __name__)
     res = markdown2.markdown(data, extras=['footnotes', 'fenced-code-blocks', 'smartypants'])
-    LOGGER.debug("res: %s" % res)
+    # LOGGER.debug("res: %s" % res)
     return res
 
 FILTERS['markdown'] = get_markdown

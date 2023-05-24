@@ -8,6 +8,7 @@ Factored out of ../metaWeblog.py for reasons.
 
 import sys, traceback
 
+from django.utils.text import slugify
 from django.conf import settings
 try:
     from django.contrib.auth import get_user_model
@@ -34,6 +35,7 @@ import logging
 
 from django.utils.timezone import now
 from django.contrib.sites.models import Site
+from django.contrib.flatpages.models import FlatPage
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -83,12 +85,31 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
     LOGGER.debug("struct: %s", struct)
     LOGGER.debug("publish: %s", publish)
     body = struct['description']
-
+    post_type = struct.get('post_type')
+    
     user = get_user(username, password)
     LOGGER.debug("User: %s", user)
+    
+    if post_type == "page":
+        LOGGER.info("Creating new page")
+        page_args = {
+            "title": struct.get('title', 'Untitled'),
+            "url": "/pages/%s/" % slugify(struct.get('title')),
+            "content": struct.get('description'),
+            "registration_required": struct.get('post_status') != 'publish',
+            "enable_comments": False,
+        }
+        
+        LOGGER.debug("page args: %s", str(page_args))
+        new_page = FlatPage(**page_args)
+        new_page.save()
+        new_page.sites.add(Site.objects.get_current())
+        new_page.save()
+        return new_page.id
+        
     if not is_user_blog(user, blogid):
         # raise Fault(PERMISSION_DENIED, 'Permission denied for %s on blogid %s' % (user, blogid))
-        logger.info("Blog %s for user %s not found!", (blogid, user))
+        LOGGER.info("Blog %s for user %s not found!", (blogid, user))
         
     LOGGER.debug("proceeding")
     try:

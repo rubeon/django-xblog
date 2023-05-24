@@ -14,6 +14,8 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
+from django.contrib.flatpages.models import FlatPage
+
 import django
 
 from django.core import exceptions
@@ -139,7 +141,7 @@ def _term_struct(term):
     # 'term_taxonomy_id': _term_taxonomy(term)['id'],
     'term_taxonomy_id': term.id,
     }
-    logger.debug("_term_struct: %s", struct)
+    logger.debug("_term_struct: %s", str(struct.keys()))
     return struct
     
 
@@ -187,7 +189,7 @@ def _post_struct(post):
         term = _term_struct(tag)
         term['count'] = str(count)
         res['terms'].append(term)
-    logger.debug("_post_struct: %s", res)
+    logger.debug("_post_struct: %s", str(res.keys()))
     return res
 
 def getPost(blog_id, username, password, post_id, fields=[]):
@@ -199,7 +201,8 @@ def getPost(blog_id, username, password, post_id, fields=[]):
     int post_id
     array fields: Optional. List of field or meta-field names to include in response.
     """
-    logger.debug("%s.getPost entered" % __name__)
+    logger.debug("%s.getPost entered")
+    logger.debug("fields: %s", str(fields))
     user = get_user(username, password)
     post = Post.objects.get(id=post_id)
     check_perms(user, post)
@@ -216,8 +219,45 @@ def getPosts(blog_id, username, password, filter={}):
     string order
     """
     logger.debug("%s.getPosts entered" % __name__)
+    logger.debug("filter: %s", str(filter))
     
+    post_type = filter.get('post_type')
     user = get_user(username, password)
+    
+    number = filter.get('number', 100)
+    if post_type == 'page':
+        logger.debug("got type page")
+        res = []
+        for page in FlatPage.objects.all().order_by('title'):
+          logger.debug(f"Got {page.title}")
+          res.append({
+            'comment_status': page.enable_comments and 'open' or 'closed',
+            'custom_fields': [],
+            'guid': page.get_absolute_url(),
+            'link': page.get_absolute_url(),
+            'ping_status': 'closed',
+            'post_author':  user.id,
+            'post_content': page.content,
+            'post_date': datetime.datetime.now(),
+            'post_date_gmt': datetime.datetime.now(),
+            'post_format': 'standard',
+            'post_id': page.id,
+            'post_modified': datetime.datetime.now(),
+            'post_modified_gmt': datetime.datetime.now(),
+            
+            'post_name': page.url,
+            'post_parent': '0',
+            'post_status': page.registration_required and 'draft' or 'publish',
+            'post_thumbnail': [],
+            'post_title': page.title,
+            'post_type': 'page',
+            'sticky': False,
+            'terms': [],
+          })
+
+        logger.debug("Returning %d pages", len(res))
+        return res 
+        
     if blog_id == 0:
         # no blog_id given, get the last one with posts by this 
         # author
@@ -237,12 +277,12 @@ def getPosts(blog_id, username, password, filter={}):
     # get a list of this user's posts on this blog
     logger.debug("Getting list of posts in blog: %s", blog)
     logger.debug("author: %s", user.author)
-    posts = Post.objects.filter(author=user.author, blog=blog)
+    posts = Post.objects.filter(author=user.author, blog=blog).order_by('-pub_date')[:int(number)]
     res = []
     for post in posts:
         logger.debug("Adding post %s", post)
         res.append(_post_struct(post))
-    logger.debug("getPosts: %s", res)
+    logger.debug("getPosts finished")
     
     return res
 
