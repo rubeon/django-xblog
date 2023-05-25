@@ -1,4 +1,3 @@
-import pip
 import xblog
 
 from setuptools import setup
