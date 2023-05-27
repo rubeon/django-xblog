@@ -87,8 +87,9 @@ def random_string(length=24):
     res = ''.join(random.choice(pool) for _ in range(length))
     return res
 
-STATUS_CHOICES = (('draft', 'Draft'), ('publish', 'Published'), ('private', 'Private'))
+STATUS_CHOICES = (('draft', 'Draft'), ('publish', 'Published'), ('private', 'Private'),('trash','Trash'))
 FORMAT_CHOICES = (('standard', 'Standard'), ('video', 'Video'), ('status', 'Status'),)
+TYPE_CHOICES = (('post', 'Post'), ('page', 'Page'),)
 # text FILTERS
 FILTER_CHOICES = (
     ('markdown', 'Markdown'),
@@ -350,6 +351,8 @@ class Post(models.Model):
     update_date = models.DateTimeField(blank=True, auto_now=True)
     create_date = models.DateTimeField(blank=True, auto_now_add=True)
     enable_comments = models.BooleanField(default=True)
+    # allow trackbacks?
+    enable_pings = models.BooleanField(default=True)
     # post content
     title = models.CharField(blank=False, max_length=255)
     slug = models.SlugField(max_length=100)
@@ -382,7 +385,12 @@ class Post(models.Model):
                                    max_length=100,
                                    choices=FORMAT_CHOICES,
                                    default='standard')
+    post_type = models.CharField(blank=True, 
+                                 default='post',
+                                 max_length=100,
+                                 choices=TYPE_CHOICES)
 
+    sticky = models.BooleanField(default=False)
     def __str__(self):
         return self.title
 
@@ -670,6 +678,12 @@ class Blog(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     slug = models.SlugField(max_length=100)
+    default_ping_status = models.BooleanField(default=False)
+    default_comments_status = models.BooleanField(default=False)
+
+    # image handling
+    
+
 
     objects = models.Manager()
     on_site = CurrentSiteManager()
@@ -693,21 +707,23 @@ class Blog(models.Model):
         """
         return reverse('xblog:blog-detail', kwargs={'slug': self.slug})
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    #def save(self, force_insert=False, force_update=False, using=None,
+    #         update_fields=None):
         """
         save override for Blog Model
         """
+    def save(self, *args, **kwargs):
         LOGGER.debug('%s.Blog.save entered %s', __name__, self.title)
         if not self.slug or self.slug == '':
             slug = SlugifyUniquely(self.title, self.__class__)
             LOGGER.debug('Slug not given, setting to %s', slug)
             self.slug = slug
 
-        super(Blog, self).save(force_insert=force_insert,
-                               force_update=force_update,
-                               using=using,
-                               update_fields=update_fields)
+        #super(Blog, self).save(force_insert=force_insert,
+        #                       force_update=force_update,
+        #                       using=using,
+        #                       update_fields=update_fields)
+        super(Blog, self).save(*args, **kwargs)
         LOGGER.debug('blog.save complete')
 
 

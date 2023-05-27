@@ -91,13 +91,15 @@ def blog_overview(request):
     # get last posts...
     # r = HttpResponse(mimetype="text/plain")
     LOGGER.debug("blog_overview entered")
-    latest_posts = Post.objects.filter(status='publish').order_by('-pub_date')[:10]
+    latest_posts = Post.objects.filter(status='publish', post_type="post").order_by('-pub_date')[:10]
+    sticky_posts = Post.object.filter(status='publish', sticky=True).order_by('-pub_date')
 
     # thisblog = Blog.objects.all()[0]
     c = {}
     c['site'] = Site.objects.get_current()
 
     c['latest_posts'] = latest_posts
+    c['sticky_posts'] = sticky_posts
     c['pagetitle'] = "blog"
     c['pageclass'] = "blog"
     # c['thisblog'] = thisblog
@@ -131,7 +133,7 @@ def site_overview(request):
     #             LOGGER.warn("%s:%s" % (cat, e))
 
 
-    latest_posts = Post.objects.filter(status='publish').order_by('-pub_date')[:10]
+    latest_posts = Post.objects.filter(status='publish', post_type='post').order_by('-pub_date')[:10]
     # latest_comments = FreeComment.objects.all().order_by('-submit_date')[:10]
 
     c['latest_feature'] = featurecat.post_set.order_by('-pub_date')

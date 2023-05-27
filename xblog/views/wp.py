@@ -27,7 +27,8 @@ from ..models import Link
 from ..models import LinkCategory
 from ..models import Author
 from ..models import Tag
-
+from ..models import STATUS_CHOICES, FILTER_CHOICES, \
+                     FORMAT_CHOICES
 from .utils import get_user
 
 try:
@@ -48,15 +49,18 @@ import os
 
 logger = logging.getLogger("xblog.views.%s" % __name__)
 
-# setup a translator for WP<->Xblog post types
-type_map = {
-    'standard':'post',
-    'video':'video',
-    'status':'aside'
-}
-
 LOGIN_ERROR = 801
 PERMISSION_DENIED = 803
+
+def wp_login(func):
+    def wrapper(*args, **kwargs):
+        blog_id = args[0]
+        username = args[1]
+        password = args[2]
+        user = get_user(username, password)
+        blog = Blog.objects.filter(owner=user)[int(blog_id)]
+        return func(blog, user, *args[3:], **kwargs)
+    return wrapper    
 
 def _setTags(post, struct, key="tags"):
     logger.debug( "setTags entered")
@@ -159,8 +163,8 @@ def _post_struct(post):
     res['post_modified'] = post.update_date
     res['post_modified_gmt'] = post.update_date
     res['post_status'] = post.status
-    res['post_type'] = 'post'
-    res['post_format'] = type_map.get(post.post_format, 'post') 
+    res['post_type'] = post.post_type
+    res['post_format'] = post.post_format
     res['post_name'] = post.slug
     res['post_author'] = str(post.author.id)
     res['post_password'] = '' # FIXME: passwords not supported
@@ -172,8 +176,8 @@ def _post_struct(post):
     res['guid'] = post.guid
     res['menu_order'] = 0 # this might be implemented for flat pages at some point...
     res['comment_status'] = post.enable_comments and "open" or "closed"
-    res['ping_status'] = post.enable_comments and "open" or "closed" # FIXME: add allow_trackbacks to Post at some point
-    res['sticky'] = False # FIXME: Implement sticky on Post, could be useful
+    res['ping_status'] = post.enable_pings and "open" or "closed"
+    res['sticky'] = post.sticky
     res['post_thumbnail'] = [] # FIXME: Implement post_thumbnail finally
     res['terms'] = []
     # add the categories
@@ -221,11 +225,16 @@ def getPosts(blog_id, username, password, filter={}):
     logger.debug("%s.getPosts entered" % __name__)
     logger.debug("filter: %s", str(filter))
     
-    post_type = filter.get('post_type')
+    post_type = filter.get('post_type', 'post')
     user = get_user(username, password)
     
-    number = filter.get('number', 100)
-    if post_type == 'page':
+    # handle status?
+    statuses = filter.get('post_status').split(',')
+
+    logger.debug(f"XXXX: {statuses}")
+    
+    
+    if post_type == 'pageXXX':
         logger.debug("got type page")
         res = []
         for page in FlatPage.objects.all().order_by('title'):
@@ -277,7 +286,12 @@ def getPosts(blog_id, username, password, filter={}):
     # get a list of this user's posts on this blog
     logger.debug("Getting list of posts in blog: %s", blog)
     logger.debug("author: %s", user.author)
-    posts = Post.objects.filter(author=user.author, blog=blog).order_by('-pub_date')[:int(number)]
+    offset = int(filter.get('offset', 0))
+    if filter.get('number'):
+      limit = int(filter.get('number'))
+      posts = Post.objects.filter(author=user.author, blog=blog, post_type=post_type, status__in=statuses).order_by('-pub_date')[offset:offset+limit]
+    else:
+      posts = Post.objects.filter(author=user.author, blog=blog, post_type=post_type, status__in=statuses).order_by('-pub_date')[offset:]
     res = []
     for post in posts:
         logger.debug("Adding post %s", post)
@@ -319,7 +333,9 @@ def newPost(blog_id, username, password, content):
         pub_date = pub_date,
         status = content.get('post_status', 'draft'),
         blog = blog,
-        author =user.author
+        author =user.author,
+        sticky = content.get('sticky', False),
+        post_type = content.get('post_type', 'post')
     )
     
     post.save()
@@ -538,11 +554,11 @@ def getOptions(blog_id, username, password, options={}):
         'admin_url':admin_url,
         'blog_tagline' : {'desc': 'Site Tagline', 'readonly': False, 'value': blog.description },
         'blog_title': {'desc': 'Site title', 'readonly': False, 'value': blog.title },
-        'blog_url' : { 'desc': 'Blog Address (URL)', 'readonly': True, 'value': blog.get_url() },
+        'blog_url' : { 'desc': 'Blog Address (URL)', 'readonly': True, 'value': blog.get_absolute_url() },
         # 'date_format': {'desc': 'Date Format', 'readonly':False, 'value': 'F j, Y'},
-        # 'default_comment_status': { 'desc': 'Allow people to submit comments on new posts', 'readonly': False, 'value': 'open'},
-        # 'default_ping_status': {'desc': 'Allow link notifications from other blogs (pingbacks and trackbacks) on new posts', 'readonly': False, 'value': 'open'},
-        # 'home_url': {'desc': 'Site address URL', 'readonly': True, 'value': blog.get_url()},
+        'default_comment_status': { 'desc': 'Allow people to submit comments on new posts', 'readonly': False, 'value': blog.default_comments_status and 'open' or 'closed'},
+        'default_ping_status': {'desc': 'Allow link notifications from other blogs (pingbacks and trackbacks) on new posts', 'readonly': False, 'value': blog.default_ping_status and 'open' or 'closed'},
+        'home_url': {'desc': 'Site address URL', 'readonly': True, 'value': "https://%s/" % (blog.site.domain)}
         # 'image_default_align': {'desc': 'Image default align', 'readonly': True, 'value': ''},
         # 'image_default_link_type': {'desc': 'Image default link type', 'readonly': True, 'value': 'file'},
         # 'image_default_size': {'desc': 'Image default size', 'readonly': True, 'value': ''},
@@ -850,8 +866,56 @@ def getUsers(blog_id, username, password, struct):
   logger.debug(res)
   return res
 
+@wp_login
 def getComments(*args, **kwargs):
     """
     meh.
     """
     return []
+
+"""
+def getPostFormats(blog_id, username, password, filter={}):
+"""
+
+@wp_login  
+def getPostFormats(blog, user, filter={}):
+  """
+  """
+  logger.debug("getPostFormats entered...")
+  logger.debug(f"user: {user}")
+  logger.debug(f"filter: {filter}")
+  all_filters = {}
+  for k, v in FORMAT_CHOICES:
+      all_filters[k] = v
+      
+  if filter.get('show-supported'):
+      res = {
+          'all': all_filters,
+          'supported': list(all_filters.keys())
+      }
+  
+  else:
+      res = all_filters
+
+  logger.debug(res)
+  return res
+  
+@wp_login
+def getPostStatusList(blog, user):
+    """
+    array(
+      'draft'   => 'Draft',
+      'pending' => 'Pending Review',
+      'private' => 'Private',
+      'publish' => 'Published'
+    );
+    
+    """
+    logger.debug("getPostStatusList entered")
+    logger.debug(f"user: {user}")
+    logger.debug(f"blog: {blog}")
+    res = {}
+    for k, v in STATUS_CHOICES:
+      res[k] = v
+    
+    return res

@@ -6,10 +6,4 @@ Pillow
 pytz
 textstat
 pygments
-django_xmlrpc
-six
-easy_thumbnails
-tzdata
-django-storages
-django-storages[azure]
-psycopg2-binary
+
