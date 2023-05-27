@@ -48,5 +48,7 @@ XMLRPC_METHODS = (
     ('xblog.views.wp.getUsers', 'wp.getUsers'),
     ('xblog.views.wp.getComments', 'wp.getComments'),
     ('xblog.views.wp.getTaxonomies', 'wp.getTaxonomies'),
+    ('xblog.views.wp.getPostStatusList', 'wp.getPostStatusList'),
+    ('xblog.views.wp.getPostFormats', 'wp.getPostFormats'),
 
 )
