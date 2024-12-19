@@ -3,9 +3,9 @@ from django.core.files.base import ContentFile
 from django.contrib.sites.models import Site
 
 from django.conf import settings
-from social.backends.twitter import TwitterOAuth
-from social.backends.facebook import FacebookOAuth2
-from urllib import urlopen
+from social_core.backends.twitter import TwitterOAuth
+from social_core.backends.facebook import FacebookOAuth2
+from urllib.request import urlopen
 
 from xblog.models import Blog
 
