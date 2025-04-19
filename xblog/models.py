@@ -25,10 +25,6 @@ from django.core.exceptions import PermissionDenied
 from django.core.validators import MinLengthValidator
 from django.utils.text import Truncator
 from django.utils.html import linebreaks
-try:
-    from django.utils.encoding import python_2_unicode_compatible
-except ImportError: # django < 3
-    from six import python_2_unicode_compatible
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
@@ -144,7 +140,6 @@ def convert_linebreaks(data):
 FILTERS['convert linebreaks'] = convert_linebreaks
 FILTERS['__default__'] = get_markdown
 
-@python_2_unicode_compatible
 class LinkCategory(models.Model):
     """Categories for  the blogroll"""
     title = models.CharField(blank=True, max_length=255)
@@ -162,7 +157,6 @@ class LinkCategory(models.Model):
     __repr__ = __str__
 
 
-@python_2_unicode_compatible
 class Link(models.Model):
     """Blogroll Struct"""
     url = models.URLField(blank=True)
@@ -186,7 +180,6 @@ class Link(models.Model):
 
     __repr__ = __str__
 
-@python_2_unicode_compatible
 class Pingback(models.Model):
     """ Replies are either pingbacks """
 
@@ -242,7 +235,6 @@ class Tag(models.Model):
         self.slug = slugify(self.title)
         super(Tag, self).save(*args, **kwargs)
 
-@python_2_unicode_compatible
 class Author(models.Model):
     """User guy"""
     fullname = models.CharField(blank=True, max_length=100)
@@ -343,7 +335,6 @@ class Category(models.Model):
             return super(Category, self).__str__()
         
 
-@python_2_unicode_compatible
 class Post(models.Model):
     """A Blog Entry, natch"""
     # metadata
