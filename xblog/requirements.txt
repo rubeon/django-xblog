@@ -6,4 +6,4 @@ Pillow
 pytz
 textstat
 pygments
-
+django-xmlrpc @ git+https://github.com/rubeon/django-xmlrpc.git@fd9aaa62e63d711a63c339e4683e9e6f394723a8
