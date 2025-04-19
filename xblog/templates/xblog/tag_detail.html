@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block extratitle %}:: Tag: {{ object.title }}{% endblock %}
+
+{% block maincontent %}
+
+<h2>Blog posts tagged with {{ tag.title }}:</h2>
+
+{% for post in tag.posts.all %}
+{% with post as object %}
+{% include "includes/post_template.txt" %}
+{% endwith %}
+{% endfor %}
+
+
+{% endblock %}
