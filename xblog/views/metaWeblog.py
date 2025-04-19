@@ -148,7 +148,7 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
             LOGGER.debug("Got category %s", c)
 
         except Category.DoesNotExist:
-            LOGGER.warn("Adding category '%s'", category )
+            LOGGER.info("Adding category '%s'", category )
             c = Category(blog=blog, title=category)
             c.save()
         clist.append(c)
@@ -173,6 +173,7 @@ def editPost(postid, username, password, struct, publish=None):
     # def editPost(*args, **kwargs):
     LOGGER.debug("editPost entered")
     LOGGER.debug("struct: %s", struct)
+    LOGGER.debug("publish: %s", publish)
     # LOGGER.debug("args: %s", args)
     user = get_user(username, password)
     post = Post.objects.get(id=postid)
@@ -196,31 +197,39 @@ def editPost(postid, username, password, struct, publish=None):
     status_dict = {}
     for k, v in STATUS_CHOICES:
         status_dict[k] = v
-
+    LOGGER.debug(f"status_dict: {status_dict}")
     # check for string or array
     if type(keywords) == type(""):
         # it's been passed as a string.  Damn you, ecto
         struct['mt_keywords'] = keywords.split(",")
 
     text_more = struct.get('mt_text_more',None)
-
+    LOGGER.debug("Text_more: %s", text_more)
     if text_more:
       # has the extended entry stuff...
+      LOGGER.debug("text_more detected...")
       body = "<!--more-->".join([body, text_more])
 
     post.enable_comments = bool(struct.get('mt_allow_comments',1)==1)
+    LOGGER.debug("Enable comments: %s", post.enable_comments)
     post.text_filter    = struct.get('mt_convert_breaks','html').lower()
+    LOGGER.debug("Text filter: %s", post.text_filter)
 
     if title:
+        LOGGER.debug("Title: %s", title)
         post.title = title
 
     if body is not None:
+        LOGGER.debug("Body: %s", body)
         post.body = body
         # todo - parse out technorati tags
     if user:
+        LOGGER.debug("User: %s", user.author)
         post.author = user.author
 
-    if publish or struct.get('post_status', 'unknown').lower() == 'publish':
+    if publish or str(struct.get('post_status', 'unknown')).lower() == 'publish':
+        LOGGER.debug("publish is %s", publish)
+        LOGGER.debug("struct post_status say: %s", struct.get('post_status', 'unknown'))
         LOGGER.debug("publishing post")
         post.status = "publish"
     else:
@@ -390,12 +399,13 @@ def setTags(post, struct, key="tags"):
     else:
         # post.categories = [Category.objects.get(title__iexact=name) for name in tags]
         LOGGER.info("Setting tags")
+        LOGGER.info("tags: %s", str(tags))
         for tag in tags:
             if tag == '':
                 LOGGER.debug("skipping '%s'", tag)
                 continue
             LOGGER.debug("setting tag '%s'", tag)
-            t, created = Tag.objects.get_or_create(title=tag.lower())
+            t, created = Tag.objects.get_or_create(title=str(tag).lower())
             if created:
                 LOGGER.info("Adding new tag: %s", t)
             else:

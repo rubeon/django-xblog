@@ -21,9 +21,13 @@ except ImportError:
 import urllib, re
 
 try:
-    from urllib import urlopen
+    import urllib2
+    redirect_handler = urllib2.HTTPRedirectHandler()
+    urlopen = urllib2.build_opener(redirect_handler).open
 except ImportError:
-    from urllib.request import urlopen
+    import urllib.request
+    redirect_handler = urllib.request.HTTPRedirectHandler()
+    urlopen = urllib.request.build_opener(redirect_handler).open
 
 # from external.BeautifulSoup import BeautifulSoup as bs
 from bs4 import BeautifulSoup as bs

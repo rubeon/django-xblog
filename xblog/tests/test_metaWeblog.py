@@ -20,7 +20,16 @@ from xblog.models import FILTERS
 
 from .utils import TestTransport
 """Test cases for XBlog's MetaWeblog API"""
+import logging
+LOGGER = logging.getLogger(__name__)
 
+
+if not LOGGER.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    LOGGER.addHandler(handler)
+    LOGGER.setLevel(logging.DEBUG)  # Set to DEBUG to capture all debug logs    
 
 try:
     from xmlrpc.client import Binary
@@ -404,9 +413,14 @@ class MetaWeblogTestCase(TestCase):
                 status='publish'
             else:
                 status = 'draft'
+            new_content['post_status'] = status
             res = self.s.metaWeblog.editPost(postid, username, password, new_content, publish)
             post = Post.objects.get(id=postid)
+            LOGGER.debug("Post title: %s", post.title)
+            LOGGER.debug("New_content title: %s", new_content['title'])
             self.assertEquals(post.title, new_content['title'])
+            LOGGER.debug("post.status: %s", post.status)
+            LOGGER.debug("status: %s", status)
             self.assertTrue(post.status==status)
 
     # metaWeblog.getCategories
@@ -522,9 +536,15 @@ class MetaWeblogTestCase(TestCase):
         """
         This peters out for some reason with IFTTT <-> Twitter
         """
-        blogid = ''
+        appkey = 0
+
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
+
+        res = self.s.metaWeblog.getUsersBlogs(appkey, username, password)
+
+        blogid = int(res[0].get('blogid'))
+
         struct =  {
             'post_status': 'publish',
             'mt_keywords': ['IFTTT', 'Twitter'],

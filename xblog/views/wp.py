@@ -309,7 +309,7 @@ def getPosts(blog_id, username, password, post_filter=None):
         posts = Post.objects.filter(author=user.author, 
                                     blog=blog,
                                     post_type=post_type,
-                                    pub_date__lt=django.utils.timezone(),
+                                    pub_date__lt=django.utils.timezone.now(),
                                     status__in=statuses).order_by('-pub_date')[offset:]
     res = []
     for post in posts:
