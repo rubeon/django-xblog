@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404
 
 # from xcomments.models import FreeComment
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-from xblog.models import Post, Blog, Author, Category
+from xblog.models import Post, Blog, Author, Category, Tag, Link, LinkCategory
 from django.views.generic.dates import YearArchiveView
 from django.views.generic.dates import MonthArchiveView
 from django.views.generic.dates import DayArchiveView
@@ -80,7 +80,7 @@ def template_preview(request, **kwargs):
             print('-'*60)
             traceback.print_exc(file=sys.stdout)
             print('-'*60)
-            LOGGER.warn(e.message)
+            LOGGER.warn(e)
             return HttpResponse(str(e))
     else:
         return HttpResponse("Please specify template filename")
@@ -136,7 +136,7 @@ def site_overview(request):
     latest_posts = Post.objects.filter(status='publish', post_type='post').order_by('-pub_date')[:10]
     # latest_comments = FreeComment.objects.all().order_by('-submit_date')[:10]
 
-    c['latest_feature'] = featurecat.post_set.order_by('-pub_date')
+    # c['latest_feature'] = featurecat.post_set.order_by('-pub_date')
     LOGGER.debug("Latest feature: %s" % c['latest_feature'])
     c['latest_posts']= latest_posts
     # c['latest_comments']= latest_comments
@@ -192,45 +192,45 @@ def export_opml(request):
     response['Content-Disposition'] = 'attachment; filename="feedreader.opml"'
     response.write(minidom.parseString(ElementTree.tostring(root, 'utf-8')).toprettyxml(indent="  "))
     return response
-# def trackback(request, id):
-#     # cribbed from http://www.personal-api.com/train/2007/jan/31/how-add-trackbacks-django/
-#     (post, meta) = (request.POST, request.META)
-#     error = None
-#     try:
-#         # The URL is the only required parameter
-#         if post.has_key('url'):
-#             url = post['url']
-#         else:
-#             raise Exception("Trackback URL Not provided")
-#         r = Response(p = Post.objects.get(id=int(id)),
-#             mode="trackback", url=url
-#         )
-#
-#         # use the title and url to create excerpt
-#         title = post.has_key('title') and request.POST['title'] or ''
-#         excerpt = post.has_key('excerpt') and request.POST['excerpt'] or ''
-#         r.content = (title + "\n\n" + excerpt).strip()
-#
-#         # fill in Akismet information from the request
-#         if meta.has_key('REMOTE_ADDR'): r.ip = meta['REMOTE_ADDR']
-#         if meta.has_key('HTTP_USER_AGENT'): r.user_agent = meta['HTTP_USER_AGENT']
-#         if meta.has_key('HTTP_REFERER'): r.referrer = meta['HTTP_REFERER']
-#
-#
-#     except Exception, message:
-#         error = {'code':1, 'message': message}
-#         # trackback errors
-#         from django.core.mail import mail_admins
-#         mail_admins('Failed Trackback', 'Trackback from %s to %s failed with %s', % (blog_name, url, message))
-#
-#     else:
-#         r.save()
-#
-#         response = HttpResponse(mimetype='text/xml')
-#             t = loader.get_template('train/trackback.xml')
-#             c = Context({'error': error})
-#             response.write(t.render(c))
-#             return response
+    # def trackback(request, id):
+    #     # cribbed from http://www.personal-api.com/train/2007/jan/31/how-add-trackbacks-django/
+    #     (post, meta) = (request.POST, request.META)
+    #     error = None
+    #     try:
+    #         # The URL is the only required parameter
+    #         if post.has_key('url'):
+    #             url = post['url']
+    #         else:
+    #             raise Exception("Trackback URL Not provided")
+    #         r = Response(p = Post.objects.get(id=int(id)),
+    #             mode="trackback", url=url
+    #         )
+    #
+    #         # use the title and url to create excerpt
+    #         title = post.has_key('title') and request.POST['title'] or ''
+    #         excerpt = post.has_key('excerpt') and request.POST['excerpt'] or ''
+    #         r.content = (title + "\n\n" + excerpt).strip()
+    #
+    #         # fill in Akismet information from the request
+    #         if meta.has_key('REMOTE_ADDR'): r.ip = meta['REMOTE_ADDR']
+    #         if meta.has_key('HTTP_USER_AGENT'): r.user_agent = meta['HTTP_USER_AGENT']
+    #         if meta.has_key('HTTP_REFERER'): r.referrer = meta['HTTP_REFERER']
+    #
+    #
+    #     except Exception, message:
+    #         error = {'code':1, 'message': message}
+    #         # trackback errors
+    #         from django.core.mail import mail_admins
+    #         mail_admins('Failed Trackback', 'Trackback from %s to %s failed with %s', % (blog_name, url, message))
+    #
+    #     else:
+    #         r.save()
+    #
+    #         response = HttpResponse(mimetype='text/xml')
+    #             t = loader.get_template('train/trackback.xml')
+    #             c = Context({'error': error})
+    #             response.write(t.render(c))
+    #             return response
 
 class AuthorCreateView(CreateView):
     model = Author
@@ -262,16 +262,16 @@ class CategoryDetailView(ListView):
 
 
     def get_object(self):
-         # this view should get blog_slug and cat_slug
-         LOGGER.debug("CategoryDetailView.get_object entered")
-         LOGGER.debug(self.args)
-         LOGGER.debug(self.kwargs)
-         blog = Blog.objects.get(slug=self.kwargs['blog_slug'])
-         category = Category.objects.get(slug=self.kwargs['cat_slug'])
-         if category.blog == blog:
-             return category
-         else:
-             return Http404
+        # this view should get blog_slug and cat_slug
+        LOGGER.debug("CategoryDetailView.get_object entered")
+        LOGGER.debug(self.args)
+        LOGGER.debug(self.kwargs)
+        blog = Blog.objects.get(slug=self.kwargs['blog_slug'])
+        category = Category.objects.get(slug=self.kwargs['cat_slug'])
+        if category.blog == blog:
+            return category
+        else:
+            return Http404
     def get_slug_field(self):
         return "cat_slug"
 
@@ -400,3 +400,22 @@ class PostDateDetailView(DateDetailView):
         context = super(PostDateDetailView, self).get_context_data(**kwargs)
         context['site'] = Site.objects.get_current()
         return context
+
+class TagListView(ListView):
+    # queryset = Post.objects.filter(status="publish")
+    Model = Post
+    slug_url_kwarg = "slug"
+
+    def get_querysetXYZ(self, *args, **kwargs):
+        """
+        should return a list of posts with this tag, sorted by -pub_date
+        """
+        LOGGER.debug("TagArchiveIndexView.get_queryset entered...")
+        LOGGER.debug(f"args:{args}, kwargs:{kwargs}")
+        tag = Tag.objects.get(slug=self.kwargs[self.slug_url_kwarg])
+        posts = Post.objects.filter(tag=tag).order_by('-pub_date')
+        return posts
+
+class TagDetailView(DetailView):
+    Model = Tag
+    

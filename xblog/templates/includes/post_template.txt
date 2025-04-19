@@ -1,8 +1,8 @@
-<article>
+<article class="{{ object.post_type }}{% if object.sticky %} sticky{% endif %}">
 <header>
-<h1><a href="{{ object.get_absolute_url }}">{{ object.title}}</a></h1>
-<h3>{{ object.author.get_fullname }} | {{ object.pub_date|date:"j F, Y" }}</h3>
-<h3>{% for tag in object.tags.all %}<a href="{{ tag.get_absolute_url }}">{{ tag.title }}</a>{% endfor %}</h3>
+<h1><a href="{{ object.get_absolute_url }}">{{ object.title}}</a>{% if object.sticky %}<i class="bi bi-pin-angle"></i>{% endif %}</h1>
+<h3>Posted by <a href="{% url 'xblog:author-detail' object.author.user.username %}" class="author">{{ object.author.get_fullname }}</a> | <a href="{{ object.get_month_archive_url }}" class="date">{{ object.pub_date|date:"j F, Y" }}</a></h3>
+{% if object.tags.count %}<h3>Tags: {% for tag in object.tags.all %}<a href="{% url 'xblog:tag-detail' tag.slug %}" class="tag">{{ tag.title }}<i class="bi bi-tag"></i></a>{% endfor %}</h3>{% endif %}
 </header>
 {{ object.full_body|safe }}
 </article>

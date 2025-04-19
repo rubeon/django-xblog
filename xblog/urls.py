@@ -5,12 +5,12 @@ Created by Eric Williams on 2007-02-27.
 """
 
 # from django.conf.urls import url
-from django.urls import include, re_path
+from django.urls import include, re_path, path
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 
-from .models import Post
+from .models import Post, Tag
 from .views.blog import AuthorCreateView
 from .views.blog import AuthorDetailView
 
@@ -26,7 +26,8 @@ from .views.blog import PostDateDetailView
 from .views.blog import CategoryDetailView
 from .views.blog import export_opml
 from .views.blog import template_preview
-
+from .views.blog import TagListView
+from .views.blog import TagDetailView
 
 from .views.post import PostCreateView
 from .views.post import PostUpdateView
@@ -115,7 +116,9 @@ urlpatterns = [
     #     name='archive-index',  ),
     re_path(r'^(?P<owner>\w+)/(?P<year>[0-9]{4})/$',
         PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH)),
-    re_path(r'^tags/$', xhr_tags),
+    path('tag/<slug:slug>/', TagDetailView.as_view(model=Tag), name='tag-detail'),
+    path('tags/', TagListView.as_view(model=Tag), name='tag-overview'),
+    # re_path(r'^tags/$', xhr_tags),
     re_path(r'^feed/$', LatestPostsFeed(), name="feed-posts"),
     re_path(r'^$', PostArchiveIndexView.as_view(model=Post,
                                             date_field="pub_date",

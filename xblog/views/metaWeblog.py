@@ -42,7 +42,7 @@ from django.core.files.base import ContentFile
 
 # from django.contrib.comments.models import FreeComment
 from django.conf import settings
-from ..models import Tag, Post, Blog, Author, Category, FILTER_CHOICES
+from ..models import Tag, Post, Blog, Author, Category, FILTER_CHOICES, STATUS_CHOICES
 from ..ping_modes import send_pings
 
 from .utils import get_user, is_user_blog, post_struct
@@ -143,6 +143,7 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
     clist = []
     for category in categories:
         try:
+            LOGGER.debug("For category %s...", category)
             c = Category.objects.get(blog=blog, title=category)
             LOGGER.debug("Got category %s", c)
 
@@ -183,12 +184,18 @@ def editPost(postid, username, password, struct, publish=None):
     if title is not None:
         post.title = title
 
-    body           = struct.get('description', None)
-    text_more      = struct.get('mt_text_more', '')
-    allow_pings    = struct.get('mt_allow_pings',1)
+    body = struct.get('description', None)
+    text_more = struct.get('mt_text_more', '')
+    allow_pings = struct.get('mt_allow_pings',1)
 
-    description    = struct.get('description','')
-    keywords       = struct.get('mt_keywords',[])
+    description = struct.get('description','')
+    keywords = struct.get('mt_keywords',[])
+    categories = struct.get('categories', [])
+
+    # get status choices
+    status_dict = {}
+    for k, v in STATUS_CHOICES:
+        status_dict[k] = v
 
     # check for string or array
     if type(keywords) == type(""):
@@ -214,15 +221,24 @@ def editPost(postid, username, password, struct, publish=None):
         post.author = user.author
 
     if publish or struct.get('post_status', 'unknown').lower() == 'publish':
+        LOGGER.debug("publishing post")
         post.status = "publish"
     else:
-        post.status = "draft"
+        LOGGER.debug("setting post status to %s", struct['post_status'])
+        post.status = struct['post_status']
 
     setTags(post, struct, key="mt_keywords")
-
+    cat_list = []
+    for category in set(struct.get('categories')):
+        cat, created = Category.objects.get_or_create(title=category, blog=post.blog)
+        if created:
+            LOGGER.info("Created new category: %s", cat.title)
+        cat_list.append(cat)
+    post.categories.set(cat_list)
+    LOGGER.debug("post categories: %s", post.categories)
     post.update_date = now()
     post.save()
-    LOGGER.debug("--")
+    LOGGER.debug("editPost ending with:")
     LOGGER.debug(post)
     LOGGER.debug(post.tags.all())
 

@@ -37,8 +37,8 @@ class TagAdmin(admin.ModelAdmin):
     """
     Admin class for Tag
     """
-    list_display = ('title',)
-    search_fields = ('title',)
+    list_display = ('title', 'slug')
+    search_fields = ('title', 'slug')
 admin.site.register(Tag, TagAdmin)
 
 class AuthorAdmin(admin.ModelAdmin):
