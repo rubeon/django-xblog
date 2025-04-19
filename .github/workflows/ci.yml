@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Adjust if you have a requirements file
+          pip install -r xblog/requirements.txt  # Adjust if you have a requirements file
           pip install django  # Install Django if not in requirements.txt
 
       - name: Run tests
