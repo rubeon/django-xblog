@@ -107,6 +107,11 @@ for mymodule in ['xblog', 'xblog.models', 'xblog.views.metaWeblog']:
     }
 
 
+# Ensure migrations are not disabled
+MIGRATION_MODULES = {}  # Leave empty to apply migrations
+
+
+
 # if DEBUG:
 #     # make all loggers use the console.
 #     for logger in LOGGING['loggers']:
