@@ -14,7 +14,7 @@ except ImportError:  # Python 2
     from xmlrpclib import DateTime
 
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("xblog.views.%s" % __name__)
 
 LOGIN_ERROR = 801
 PERMISSION_DENIED = 803
@@ -44,14 +44,22 @@ def is_user_blog(user, blogid):
     """
     checks if the blog in question belongs to the use
     """
+    logger.debug("is_user_blog entered")
+    logger.debug("user: %s, blog: %s", str(user), str(blogid))
     try:
+        logger.debug("Getting blog")
         blog = Blog.objects.get(pk=blogid)
-    except ValueError:
+        logger.debug("Got blog %s", blog)
+    except Blog.DoesNotExist:
+        logger.debug("Could find blog id, retrying")
         # probably blank or something
-        blog = Blog.objects.get(owner=user)
+        blog = Blog.objects.filter(owner=user)[int(blogid)]
+    logger.debug("Proceeding...")
     if blog.owner==user:
+        logger.debug("Is User")
         return True
     else:
+        logger.debug("Is not user")
         return False
 
 def post_struct(post):

@@ -13,6 +13,6 @@
 {% for month in blog_months %}
 {% ifchanged %}{% if not forloop.first %}<br />{% endif %}<span class="blogrollheader"><a href="/blog/{{month.year}}">{{month|date:"Y"|lower}}</a></span><br />{% endifchanged %}
 <a href="/blog/{{ month|date:"Y/M"|lower }}/" title="{{ month|date:"M Y" }}">{{ month|date:"M" }}</a>
-{% ifequal month.month 6  %}<br />{% endifequal %}{% endfor %}
+{% if month.month == 6  %}<br />{% endif %}{% endfor %}
 <!-- /blogroll -->
 

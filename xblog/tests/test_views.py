@@ -135,3 +135,10 @@ class IndexViewsTestCase(BlogViewsBaseCase):
         # except TemplateDoesNotExist, e:
         #         for tmpl, msg in e.tried:
         #             LOGGER.debug("XXX Tried '%s'", tmpl.name)
+    def test_readabilityBoxPresentWhenLoggedIn(self):
+        LOGGER.debug("XXX: test_readabilityBoxPresentWhenLoggedIn entered")
+        self.post.status = 'publish'
+        self.post.save()
+        response = self.client.get(self.post.get_absolute_url())
+        self.assertContains(response, 'Flesch')
+        

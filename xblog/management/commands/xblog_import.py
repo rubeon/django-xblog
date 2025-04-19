@@ -19,8 +19,6 @@ from django.conf import settings
 try:
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    print 20*'x'
-    print User
 except ImportError:
     from django.contrib.auth.models import User 
 
@@ -28,11 +26,11 @@ except ImportError:
 from optparse import make_option
 from xblog.models import Blog, Post, Author
 import sys
-import xmlrpclib
+from xmlrpc import client
 import urllib
 import getpass
 import os
-import BeautifulSoup
+import bs4
 import json
 import getpass
 from pprint import pprint
@@ -62,16 +60,15 @@ def notify(msg):
 
 class Command(BaseCommand):
     """ Import blog posts from a remote blog """
-    option_list = BaseCommand.option_list + (
-            # make_option("-u", "--username", dest="username", default=[], metavar="username", help="User name for remote API endpoint"),
-            make_option("-o", "--owner", dest="owner", metavar="ownername", help="Owner's Django user name"),
-            make_option("-a", "--all", dest="all_blogs", action="store_true", help="Import all user blogs from API endpoint"),
-            make_option("-x", "--api-endpoint", dest="api_endpoint", default=None, metavar="API endpoint", help="Direct URL for remote API endpoint"),
-            make_option("-p", "--password", dest="password", default=[], help="Password for remote API connection"),
-            make_option("-f", "--filename", dest="filename", metavar="json_filename", help="JSON file which contains dump blog data (created with --dump)"),
-            make_option("-n", "--dry-run", dest="dry_run", action="store_true", help="Do not write anything to the database"),
-            make_option("-d", "--dump", dest="dump", action="store_true", help="Write retrieved data to screen in JSON format"),
-        )
+    def add_arguments(self, parser):
+        parser.add_argument("-o", "--owner", dest="owner", metavar="ownername", help="Owner's Django user name"),
+        parser.add_argument("-a", "--all", dest="all_blogs", action="store_true", help="Import all user blogs from API endpoint"),
+        parser.add_argument("-x", "--api-endpoint", dest="api_endpoint", default=None, metavar="API endpoint", help="Direct URL for remote API endpoint"),
+        parser.add_argument("-p", "--password", dest="password", default=[], help="Password for remote API connection"),
+        parser.add_argument("-f", "--filename", dest="filename", metavar="json_filename", help="JSON file which contains dump blog data (created with --dump)"),
+        parser.add_argument("-n", "--dry-run", dest="dry_run", action="store_true", help="Do not write anything to the database"),
+        parser.add_argument("-d", "--dump", dest="dump", action="store_true", help="Write retrieved data to screen in JSON format")
+    
     args = "[blog_url] [xblog_id] [-u username] [-p password]"
     help = """ Import blog posts from a remote blog """
     
@@ -79,7 +76,6 @@ class Command(BaseCommand):
         """
         imports a remote blog via the WordPress API
         """
-        
         if options.get("api_endpoint", None):
             self.xmlrpc_import(args, options)
         elif options.get('filename'):
@@ -104,25 +100,21 @@ class Command(BaseCommand):
         except ObjectDoesNotExist:
             local_user = None
 
-        print "Parsing %s for %s" % (username, filename)        
         # owner = None
         owner = local_user
         while not owner:
             try:
                 owner = User.objects.get(username=username)
-                print "Found %s" % owner
-                
+
             except ObjectDoesNotExist:
-                print "User name '%s' not found" % username
-                print "Choose from one of the following:"
                 for user in User.objects.all():
-                    print "- %s" % user.username
-                print "[q] Quit"
-                username = raw_input('> ').strip()
+                    print("- %s" % user.username)
+                print("[q] Quit")
+                username = input('> ').strip()
                 if username.lower()=='q':
                     sys.exit()
             
-        print "Proceeding with %s (id=%s)" % (owner, owner.id)
+        print("Proceeding with %s (id=%s)" % (owner, owner.id))
         
         data = json.load(open(options.get("filename")))
 
@@ -133,12 +125,11 @@ class Command(BaseCommand):
             if point['model'] == 'xblog.category':
                 continue
             if point['model'] == 'xblog.blog':
-                pprint( point)
                 point['fields']['owner'] = owner.id
         
             if point['model'] == 'xblog.author':
                 pprint(point)
-                print "Removing author record for %s" % point['fields']['fullname']
+                print("Removing author record for %s" % point['fields']['fullname'])
                 data.remove(point)
                 continue
 
@@ -156,9 +147,6 @@ class Command(BaseCommand):
                     point['fields'].pop(old_field, None)
             new_data.append(point)
             
-            # for point in new_data:
-            #     print point
-            
             json.dump(new_data, open('new_data.json','w'), indent=4)
             
 
@@ -166,14 +154,14 @@ class Command(BaseCommand):
         """
         Sucks a blog over the internet using its XMLRPC protocol.
         """
-        blog_url = args[0]
-        xblog_id = args[1]
+        blog_url = options['api_endpoint']
+        xblog_id = None
         
         if options.get("dump"):
             dry_run = True
-            notify("Dumping %s to screen" % args[0])
+            notify("Dumping %s to screen" % options['api_endpoint'])
 
-        username = options.get("username") or raw_input("Username: ").strip()
+        username = options.get("owner") or input("Username: ").strip()
         password = options.get("password") or getpass.getpass()
         
         wp_url =  options.get('api_endpoint')
@@ -195,9 +183,9 @@ class Command(BaseCommand):
             notify(wp_url)
             
         notify("Logging in at %s" % wp_url)
-        wp = xmlrpclib.ServerProxy(wp_url, use_datetime=True, verbose=1)
-        blogs = wp.wp.getUsersBlogs(username, password)
+        wp = client.ServerProxy(wp_url, use_datetime=True, verbose=1)
         
+        blogs = wp.blogger.getUsersBlogs(username, password)
         notify("Got %d blogs" % len(blogs))
         
         active_blogs = []
@@ -208,18 +196,12 @@ class Command(BaseCommand):
                 notify("[%d]: %s (ID:%s) " % (counter, blog["blogName"], blog["blogid"]))
                 counter+=1
             notify("[a]: All blogs")
-            choice = raw_input("Enter %s or 'a' for all blogs" % str(range(1,len(blogs)))).strip()
+            choice =input("Enter %s or 'a' for all blogs" % str(range(1,len(blogs)))).strip()
             if choice.lower() == 'a':
                 notify("Grabbing all blogs from this user")
                 active_blogs = blogs
             elif int(choice) in range(1,counter):
                 notify("Grabbing blog %s" % choice)
-                # print blogs
-                # print blogs[0]
-                # print blogs[1]
-                # print '---'
-                # print int(choice)-1
-                # print blogs[0]
                 active_blogs = blogs[int(choice)-1:int(choice)]
         else:
             active_blogs = blogs
@@ -228,8 +210,7 @@ class Command(BaseCommand):
         
         xblog = Blog.objects.get(id=int(xblog_id))
         # xblog_author = User.objects.all()[0] # FIXME: should probably try to get fancy and match email address or some'n
-        owner_username = options.get("owner") or raw_input("Owner's username").strip()
-        # print "|%s|" % owner_username
+        owner_username = options.get("owner") or input("Owner's username").strip()
         xblog_author = User.objects.get(username=owner_username)
         categories = []
         posts = []
@@ -247,7 +228,6 @@ class Command(BaseCommand):
             while True:
                 filter['number'] = 10
                 posts = wp.wp.getPosts(blog['blogid'], username, password, filter)
-                # print "%d posts" % len(posts)
                 if len(posts) == 0:
                     notify("Done!")
                     break
@@ -255,14 +235,12 @@ class Command(BaseCommand):
                     # convert the post date. 
                     all_posts.append(post)
                     counter = counter + 1
-                    # print "[%3d] %s (%s) %s" % (counter, post['post_title'], post['post_date'], post['post_status']),
                     notify("Title: %s" % post['post_title'])
                     # notify("Date: %s" % post['post_date'])
                     # notify("Status: %s" % post['post_status'])
                     # notify("Author: %s" % post['post_author'])
                     # notify("Type: %s" % post['post_type'])
                     # notify(10 * "-")
-                    # print post['post_content'] 
                 filter['offset']+=len(posts)
             
             notify("Downloaded %d posts" % len(all_posts))
@@ -291,12 +269,11 @@ class Command(BaseCommand):
         # extract the relevant information from the post
         keys = post.keys()
         keys.sort()
-        # pprint(keys)
         # try to find if this post has already been imported?
         try:
             xpost = Post.objects.get(guid=post['guid'])
             return xpost
-        except ObjectDoesNotExist, e:
+        except ObjectDoesNotExist as e:
             pass
         
         xblog_post = {}
@@ -313,7 +290,6 @@ class Command(BaseCommand):
         xblog_post['status'] = post['post_status']
         xblog_post['guid'] = post['guid']
         xblog_post['blog'] = xblog
-        # print xblog_post
         
         xpost = Post(**xblog_post)
         return xpost
@@ -325,13 +301,12 @@ class Command(BaseCommand):
     
     def get_or_create_category(self, category, xblog):
         # looks for a category in XBlog, creates if it hasn't found one
-        # print category
         # slug = self.get_category_slug(category)
         cat = {}
-        print category.keys()
+        print(category.keys())
         try:
             xblog_category = Category.objects.get(title=category['description'])
-        except ObjectDoesNotExist, e:
+        except ObjectDoesNotExist as e:
             cat['title'] = category['description']
             # cat['description'] = category['categoryDescription']
             cat['blog'] = xblog
@@ -354,7 +329,6 @@ class Command(BaseCommand):
             if term['taxonomy'] == 'category':
                 mycat = {'description':term['name']}
                 category_list.append(self.get_or_create_category(mycat, xblog))
-        # print category_list
         return category_list
 
 
@@ -362,10 +336,8 @@ class Command(BaseCommand):
         """
         Gets the API endpoint as encoded in the blog's headers
         """
-        # print "Opening %s..." % page
         data = urllib.urlopen(page).read()
-        # print "Got %d bytes" % len(data)
-        soup = BeautifulSoup.BeautifulSoup(data)
+        soup = bs4.BeautifulSoup(data)
         xmlrpc_url = [link.get('href') for link in soup.findAll("link", rel="EditURI", type="application/rsd+xml")]
         if len(xmlrpc_url):
             # for now, just return the first one choose a proper link
@@ -381,40 +353,24 @@ class Command(BaseCommand):
 
 
 def date_to_str(post):
-    # print post.keys()
-    #post = p.copy()
     for key in post.keys():
         # if it's a dict, recurse
         if type(post[key])==type({}):
             post[key] = date_to_str(post[key])
             
         if key in date_fields:
-            # print dir(post[key])
             post[key] = str(post[key].isoformat())
-            # print "* %s:%s (%s)" % (key, post[key], type(post[key]))
         else:
-            # print "- |%s| not in date_fields" % key
             pass
-    
-    # for key in post.keys():
-        # print "- %s:%s (%s)" % (key, post[key], type(post[key]))
-        # if type(post[k]) != type(''):
-        #     print "Non-string: %s\t%s" % (k, type(post[k]))
-    
-    
-    # pprint( post)
     
     return post
 
 def get_urls(post):
     """docstring for get_urls"""
     # this is going to return a list of URLs in the post
-    # print post.keys()
-    # print post['post_format']
 
     data = post['post_content']
-    # print data
-    soup = BeautifulSoup.BeautifulSoup(data)
+    soup = bs4.BeautifulSoup(data)
     urls = {}
     urls['links'] = soup.findAll("a")
     urls['imgs'] = soup.findAll("img")
@@ -440,16 +396,16 @@ if __name__ == '__main__':
         # 'blogName': 'Cloudcritical'}]
 
         # walk through the blogs...
-        print "Got %d blogs" % len(blogs)
+        print("Got %d blogs" % len(blogs))
 
 
 
         for blog in blogs:
-            print "Blog:", blog.get('blogName')
+            print("Blog:", blog.get('blogName'))
             categories =  wp.wp.getCategories(blog['blogid'], username, password)
-            print "%d Categories" % len(categories)
+            print("%d Categories" % len(categories))
             for category in categories:
-                print "- %s [%s][%s]" % (category['categoryName'], category['htmlUrl'], category['categoryId'])
+                print("- %s [%s][%s]" % (category['categoryName'], category['htmlUrl'], category['categoryId']))
             filter = {}
             # if INCLUDE_DRAFTS:
             #     filter
@@ -460,33 +416,29 @@ if __name__ == '__main__':
 
                 filter['number'] = 10
                 posts = wp.wp.getPosts(blog['blogid'], username, password, filter)
-                # print "%d posts" % len(posts)
                 if len(posts) == 0:
-                    print "Done!"
+                    print("Done!")
                     break
                 for post in posts:
                     # convert the post date. 
                     all_posts.append(post)
                     counter = counter + 1
-                    # print "[%3d] %s (%s) %s" % (counter, post['post_title'], post['post_date'], post['post_status']),
-                    print "Title:", post['post_title']
-                    print "Date:", post['post_date']
-                    print "Status:", post['post_status']
-                    print "Author", post['post_author']
-                    print "Type:", post['post_type']
-                    print 10 * "-"
-                    # print post['post_content'] 
+                    print("Title:", post['post_title'])
+                    print("Date:", post['post_date'])
+                    print("Status:", post['post_status'])
+                    print("Author", post['post_author'])
+                    print("Type:", post['post_type'])
+                    print(10 * "-")
                 filter['offset']+=len(posts)
         
         # dump posts to json file...
-        # print all_posts[-1]
         
-        print "Dumping to wp_data.json"
+        print("Dumping to wp_data.json")
         data = [date_to_str(p) for p in all_posts]
         json.dump(date, open("wp_data.json", 'w'))
 
 
     for post in data:
         links = get_urls(post)
-        print post['post_title']
+        print(post['post_title'])
         pprint(links)

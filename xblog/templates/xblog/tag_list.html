@@ -1,0 +1,10 @@
+{% extends "index.html" %}
+{% block maincontent %}
+<h1>Tags</h1>
+<ul>
+{% for tag in tag_list %}
+<li><a href="{% url 'xblog:tag-detail' tag.slug %}">{{ tag.title }}</a></li>
+{% endfor %}
+</ul>
+
+{% endblock %}

@@ -16,5 +16,5 @@ class PostCreateForm(ModelForm):
         Meta class for admin
         """
         model = Post
-        fields = ['title', 'body', 'categories', 'status', 'tags', 'text_filter', 'blog']
+        fields = ['title', 'body', 'categories', 'status', 'tags', 'text_filter', 'blog', 'sticky', 'post_format', 'post_type', 'sticky']
 

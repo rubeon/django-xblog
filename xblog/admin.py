@@ -37,8 +37,8 @@ class TagAdmin(admin.ModelAdmin):
     """
     Admin class for Tag
     """
-    list_display = ('title',)
-    search_fields = ('title',)
+    list_display = ('title', 'slug')
+    search_fields = ('title', 'slug')
 admin.site.register(Tag, TagAdmin)
 
 class AuthorAdmin(admin.ModelAdmin):
@@ -58,7 +58,7 @@ class PostAdmin(admin.ModelAdmin):
     list_display = ('title', 'slug', 'pub_date') #,'author','status')
     search_fields = ('title', 'body', 'slug')
     date_hierarchy = 'pub_date'
-    list_filter = ['author', 'pub_date', 'status', 'tags',]
+    list_filter = ['author', 'pub_date', 'status', 'tags', 'post_type', 'sticky',]
 
     fieldsets = (
         (None, {'fields':('title', 'slug', 'guid')}),
@@ -66,10 +66,13 @@ class PostAdmin(admin.ModelAdmin):
         (None, {'fields':('text_filter', 'body', 'categories')}),
         ('Metadata', {'fields':(
             'post_format',
+            'post_type',
+            'sticky',
             'tags',
             'blog',
             'author',
             'status',
+            'enable_pings',
             'enable_comments')}),
     )
 
@@ -84,7 +87,7 @@ class BlogAdmin(admin.ModelAdmin):
     """
     Admin class for Blog
     """
-    list_display = ('title',)
+    list_display = ('title', 'owner')
     search_fields = ('title',)
 
 admin.site.register(Blog, BlogAdmin)

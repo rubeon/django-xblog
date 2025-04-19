@@ -36,6 +36,8 @@ from django.forms import ModelForm
 from django.db.models.signals import post_save
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
+from django.utils.text import slugify
+
 # from django.contrib.auth import get_user_model
 try:
     from django.urls import reverse
@@ -44,9 +46,10 @@ except ImportError: # django < 2
 from .external.postutils import SlugifyUniquely
 from .external import fuzzyclock
 from .external import text_stats
+import textstat
 
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = logging.getLogger("xblog.__name__")
 
 def create_profile(*args, **kwargs):
     """
@@ -55,6 +58,9 @@ def create_profile(*args, **kwargs):
     """
     LOGGER.debug('%s.create_profile entered', __name__)
     LOGGER.debug('args: %s', str(args))
+    if kwargs['raw']:
+        LOGGER.debug("Skipping create_profile due to loaddata")
+        return
     user = kwargs["instance"]
     # if kwargs["created"]:
     #     # check if the profile already exists
@@ -81,13 +87,15 @@ def random_string(length=24):
     res = ''.join(random.choice(pool) for _ in range(length))
     return res
 
-STATUS_CHOICES = (('draft', 'Draft'), ('publish', 'Published'), ('private', 'Private'))
+STATUS_CHOICES = (('draft', 'Draft'), ('publish', 'Published'), ('private', 'Private'),('trash','Trash'))
 FORMAT_CHOICES = (('standard', 'Standard'), ('video', 'Video'), ('status', 'Status'),)
+TYPE_CHOICES = (('post', 'Post'), ('page', 'Page'),)
 # text FILTERS
 FILTER_CHOICES = (
     ('markdown', 'Markdown'),
     ('html', 'HTML'),
-    ('convert linebreaks', 'Convert linebreaks')
+    ('convert linebreaks', 'Convert linebreaks'),
+    ('__default__', 'Default (HTML)'),
 )
 
 FILTERS = {}
@@ -102,7 +110,7 @@ def get_markdown(data):
     # res = m.toString()
     # res = smartyPants(res, "1qb")
     """
-    LOGGER.debug("%s.get_markdown entered", __name__)
+    # LOGGER.debug("%s.get_markdown entered", __name__)
     res = markdown2.markdown(data, extras=['footnotes', 'fenced-code-blocks', 'smartypants'])
     # LOGGER.debug("res: %s" % res)
     return res
@@ -224,10 +232,15 @@ Target URL: %s
 class Tag(models.Model):
     """(Tag description)"""
     title = models.CharField(blank=True, max_length=100)
+    slug = models.SlugField(max_length=100)
     def __str__(self):
         # return "%s (%s - %s)" % (self.title, self.source_url, self.target_url)
         return self.title
     __unicode__ = __str__
+    
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.title)
+        super(Tag, self).save(*args, **kwargs)
 
 @python_2_unicode_compatible
 class Author(models.Model):
@@ -338,6 +351,8 @@ class Post(models.Model):
     update_date = models.DateTimeField(blank=True, auto_now=True)
     create_date = models.DateTimeField(blank=True, auto_now_add=True)
     enable_comments = models.BooleanField(default=True)
+    # allow trackbacks?
+    enable_pings = models.BooleanField(default=True)
     # post content
     title = models.CharField(blank=False, max_length=255)
     slug = models.SlugField(max_length=100)
@@ -345,13 +360,13 @@ class Post(models.Model):
     guid = models.CharField(blank=True, max_length=255)
     body = models.TextField(blank=True)
     summary = models.TextField(blank=True)
-    categories = models.ManyToManyField(Category)
+    categories = models.ManyToManyField(Category, related_name="posts")
     primary_category_name = models.ForeignKey(Category,
                                               related_name='primary_category_set',
                                               blank=True,
                                               on_delete=models.CASCADE,
                                               null=True)
-    tags = models.ManyToManyField(Tag, blank=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
     blog = models.ForeignKey('Blog', on_delete=models.CASCADE)
     # author = models.ForeignKey(User)
     author = models.ForeignKey('Author', on_delete=models.CASCADE)
@@ -370,7 +385,12 @@ class Post(models.Model):
                                    max_length=100,
                                    choices=FORMAT_CHOICES,
                                    default='standard')
+    post_type = models.CharField(blank=True, 
+                                 default='post',
+                                 max_length=100,
+                                 choices=TYPE_CHOICES)
 
+    sticky = models.BooleanField(default=False)
     def __str__(self):
         return self.title
 
@@ -396,7 +416,7 @@ class Post(models.Model):
             pass
         if not self.guid or self.guid == '':
             self.guid = self.get_absolute_url()
-
+        LOGGER.debug("prepoulate finished...")
     def handle_technorati_tags(self):
         """
         takes the post, and returns the technorati links in them...
@@ -540,6 +560,7 @@ class Post(models.Model):
             'month': self.pub_date.strftime("%b").lower(),
             'day': self.pub_date.day,
         }
+        LOGGER.debug(kwargs)
         return reverse("xblog:post-detail", kwargs=kwargs)
 
     def get_site_url(self):
@@ -639,7 +660,13 @@ class Post(models.Model):
         FIXME: Get a good readability module from somewhere.
         """
         LOGGER.debug('get_readability entered for %s', str(self))
-        my_readability = text_stats.calculate_readability(self)
+        # my_readability = text_stats.calculate_readability(self)
+        my_readability = {}
+        my_readability["flesch_reading_ease"] = textstat.flesch_reading_ease(self.full_body)
+        my_readability["flesch_kincaid_grade"] = textstat.flesch_kincaid_grade(self.full_body)
+        my_readability["smog"] = textstat.smog_index(self.full_body)
+        my_readability["coleman_liau"] = textstat.coleman_liau_index(self.full_body)
+        
         return my_readability
 
 class Blog(models.Model):
@@ -651,6 +678,12 @@ class Blog(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     slug = models.SlugField(max_length=100)
+    default_ping_status = models.BooleanField(default=False)
+    default_comments_status = models.BooleanField(default=False)
+
+    # image handling
+    
+
 
     objects = models.Manager()
     on_site = CurrentSiteManager()
@@ -674,21 +707,23 @@ class Blog(models.Model):
         """
         return reverse('xblog:blog-detail', kwargs={'slug': self.slug})
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    #def save(self, force_insert=False, force_update=False, using=None,
+    #         update_fields=None):
         """
         save override for Blog Model
         """
+    def save(self, *args, **kwargs):
         LOGGER.debug('%s.Blog.save entered %s', __name__, self.title)
         if not self.slug or self.slug == '':
             slug = SlugifyUniquely(self.title, self.__class__)
             LOGGER.debug('Slug not given, setting to %s', slug)
             self.slug = slug
 
-        super(Blog, self).save(force_insert=force_insert,
-                               force_update=force_update,
-                               using=using,
-                               update_fields=update_fields)
+        #super(Blog, self).save(force_insert=force_insert,
+        #                       force_update=force_update,
+        #                       using=using,
+        #                       update_fields=update_fields)
+        super(Blog, self).save(*args, **kwargs)
         LOGGER.debug('blog.save complete')
 
 

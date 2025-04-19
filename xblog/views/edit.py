@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 # encoding: utf-8
 """
 edit.py
@@ -49,11 +49,11 @@ def content_list(request, **kwargs):
     # get a post_list by current user
     site = get_current_site(request)
     post_list = Post.objects.filter(author=request.user.author).order_by('-pub_date')
-    # logger.debug("post_list: %s" % str(post_list))
-
-    c = RequestContext(request, {'post_list': post_list, })
+    logger.debug("post_list: %s" % str(post_list))
+    c = {}
+    c['post_list'] = post_list
+    c['user'] = request.user
     t = loader.get_template("xblog/content_list.html")
-
     return HttpResponse(t.render(c))
 
 
@@ -74,14 +74,16 @@ def preview_post(request, **kwargs):
     logger.debug("preview_post called")
     logger.debug(kwargs)
 
-    p = Post.objects.get(slug=kwargs['slug'])
+    post = Post.objects.get(slug=kwargs['slug'])
 
-    logger.info("preview_post showing %s" % p)
+    logger.info("preview_post showing %s" % post)
     # data = p.get_full_body()
 
     # put the post into a context for the template render...
     logger.debug("opening template")
-    c = RequestContext(request, {'object':p})
+    # c = RequestContext(request, {'object':p})
+    c = {}
+    c['object'] = post
     t = loader.get_template('includes/post_template.txt')
 
     return HttpResponse(t.render(c))

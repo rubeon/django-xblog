@@ -4,11 +4,13 @@ urls.py
 Created by Eric Williams on 2007-02-27.
 """
 
-from django.conf.urls import url
+# from django.conf.urls import url
+from django.urls import include, re_path, path
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 
-from .models import Post
+from .models import Post, Tag
 from .views.blog import AuthorCreateView
 from .views.blog import AuthorDetailView
 
@@ -24,7 +26,8 @@ from .views.blog import PostDateDetailView
 from .views.blog import CategoryDetailView
 from .views.blog import export_opml
 from .views.blog import template_preview
-
+from .views.blog import TagListView
+from .views.blog import TagDetailView
 
 from .views.post import PostCreateView
 from .views.post import PostUpdateView
@@ -69,53 +72,55 @@ PAGE_LENGTH = 30
 app_name = 'xblog'
 
 urlpatterns = [
-    url(YEAR_ARCHIVE_PATTERN, PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH),
+    re_path(YEAR_ARCHIVE_PATTERN, PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH),
         name="year-archive"),
-    url(MONTH_ARCHIVE_PATTERN, PostMonthArchiveView.as_view(paginate_by=5),
+    re_path(MONTH_ARCHIVE_PATTERN, PostMonthArchiveView.as_view(paginate_by=5),
         name="month-archive"),
-    url(DAY_ARCHIVE_PATTERN, PostDayArchiveView.as_view(paginate_by=PAGE_LENGTH),
+    re_path(DAY_ARCHIVE_PATTERN, PostDayArchiveView.as_view(paginate_by=PAGE_LENGTH),
         name="day-archive"),
-    url(DATE_DETAIL_PATTERN, PostDateDetailView.as_view(),
+    re_path(DATE_DETAIL_PATTERN, PostDateDetailView.as_view(),
         name='post-detail'),
-    url(POST_STATS_PATTERN, stats,
+    re_path(POST_STATS_PATTERN, stats,
         name="post-stats"),
-    url(POST_PREVIEW_PATTERN, preview_post,
+    re_path(POST_PREVIEW_PATTERN, preview_post,
         name="post-preview"),
-    url(POST_SET_PUBLISH_PATTERN, set_publish,
+    re_path(POST_SET_PUBLISH_PATTERN, set_publish,
         name="post-set-publish"),
-    url(r'add_post/$', login_required(PostCreateView.as_view()),
+    re_path(r'add_post/$', login_required(PostCreateView.as_view()),
         name='post-add'),
-    url(POST_UPDATE_PATTERN, login_required(PostUpdateView.as_view()),
+    re_path(POST_UPDATE_PATTERN, login_required(PostUpdateView.as_view()),
         name='post-edit'),
-    url(POST_DELETE_PATTERN, login_required(PostDeleteView.as_view()),
+    re_path(POST_DELETE_PATTERN, login_required(PostDeleteView.as_view()),
         name='post-delete'),
-    url(r'add_blog/$', login_required(BlogCreateView.as_view()),
+    re_path(r'add_blog/$', login_required(BlogCreateView.as_view()),
         name='blog-add'),
-    url(BLOG_UPDATE_PATTERN, login_required(BlogUpdateView.as_view()),
+    re_path(BLOG_UPDATE_PATTERN, login_required(BlogUpdateView.as_view()),
         name='blog-update'),
-    url(BLOG_DETAIL_PATTERN, BlogDetailView.as_view(),
+    re_path(BLOG_DETAIL_PATTERN, BlogDetailView.as_view(),
         name='blog-detail'),
-    url(CATEGORY_DETAIL_PATTERN, CategoryDetailView.as_view(paginate_by=PAGE_LENGTH),
+    re_path(CATEGORY_DETAIL_PATTERN, CategoryDetailView.as_view(paginate_by=PAGE_LENGTH),
         name='category-detail'),
-    url(r'add_author/$', staff_member_required(AuthorCreateView.as_view()),
+    re_path(r'add_author/$', staff_member_required(AuthorCreateView.as_view()),
         name='author-add'),
-    url(AUTHOR_DETAIL_PATTERN, AuthorDetailView.as_view(),
+    re_path(AUTHOR_DETAIL_PATTERN, AuthorDetailView.as_view(),
         name='author-detail'),
-    url(r'content_list/$', content_list,
+    re_path(r'content_list/$', content_list,
         name='content-list'),
-    url(r'export_opml/$', export_opml,
+    re_path(r'export_opml/$', export_opml,
         name='export-opml'),
-    url(TEMPLATE_PREVIEW_PATTERN, template_preview,
+    re_path(TEMPLATE_PREVIEW_PATTERN, template_preview,
         name='template-preview'),
-    # # url(r'^$', ArchiveIndexView.as_view(model=Post, date_field="pub_date",
+    # # re_path(r'^$', ArchiveIndexView.as_view(model=Post, date_field="pub_date",
     #     paginate_by=PAGE_LENGTH,
     #     queryset=Post.objects.all().filter(status="publish").select_related('author')),
     #     name='archive-index',  ),
-    url(r'^(?P<owner>\w+)/(?P<year>[0-9]{4})/$',
+    re_path(r'^(?P<owner>\w+)/(?P<year>[0-9]{4})/$',
         PostYearArchiveView.as_view(paginate_by=PAGE_LENGTH)),
-    url(r'^tags/$', xhr_tags),
-    url(r'^feed/$', LatestPostsFeed(), name="feed-posts"),
-    url(r'^$', PostArchiveIndexView.as_view(model=Post,
+    path('tag/<slug:slug>/', TagDetailView.as_view(model=Tag), name='tag-detail'),
+    path('tags/', TagListView.as_view(model=Tag), name='tag-overview'),
+    # re_path(r'^tags/$', xhr_tags),
+    re_path(r'^feed/$', LatestPostsFeed(), name="feed-posts"),
+    re_path(r'^$', PostArchiveIndexView.as_view(model=Post,
                                             date_field="pub_date",
                                             paginate_by=PAGE_LENGTH,
                                             queryset=Post.objects.filter(status="publish")),

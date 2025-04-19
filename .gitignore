@@ -63,3 +63,7 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+
+# don't commit migrations
+xblog/migrations/0*
