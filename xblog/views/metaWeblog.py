@@ -148,7 +148,7 @@ def newPost(blogid, username, password, struct, publish="PUBLISH"):
             LOGGER.debug("Got category %s", c)
 
         except Category.DoesNotExist:
-            LOGGER.warn("Adding category '%s'", category )
+            LOGGER.info("Adding category '%s'", category )
             c = Category(blog=blog, title=category)
             c.save()
         clist.append(c)
