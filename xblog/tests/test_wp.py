@@ -150,7 +150,6 @@ class WpTestCase(TestCase):
         username = self.test_user1.username
         password = self.test_user1.author.remote_access_key
         empty_filter = {}
-
         res = self.server_proxy.wp.getPosts(blog_id, username, password, empty_filter)
         # make sure it's the correct set
         for post in res:

@@ -517,6 +517,7 @@ class Post(models.Model):
         """
         gets the URL of the day archive.
         """
+        LOGGER.debug("get_day_archive_url entered for %s", str(self))
         kwargs = {
             "year": self.pub_date.year,
             'month': self.pub_date.strftime("%b").lower(),
@@ -530,12 +531,14 @@ class Post(models.Model):
         """
         get the URL of the archive for all posts
         """
+        LOGGER.debug("get_post_archive_url entered for %s", str(self))
         return self.get_absolute_url()
 
     def get_trackback_url(self):
         """
         returns url for trackback pings.
         """
+        LOGGER.debug("get_trackback_url entered for %s", str(self))
         return urljoin(self.get_absolute_uri(), "trackback/")
 
     def get_absolute_uri(self):
@@ -543,6 +546,7 @@ class Post(models.Model):
         returns a url for the public interweb
         """
         # uri = urllib.parse.urljoin(self.blog.get_url(), self.get_absolute_url())
+        LOGGER.debug("get_absolute_uri entered for %s", str(self))
         return self.get_absolute_url()
 
     # will standardize on this in the future
