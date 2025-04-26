@@ -19,7 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.flatpages',
     'xblog',
     'markdown_deux',
-    'django_xmlrpc'
+    'django_xmlrpc_dx'
 ]
 DEBUG=False
 SITE_ID=1

@@ -1,11 +1,11 @@
-# auto-register file for django_xmlrpc
+# auto-register file for django_xmlrpc_dx
 
 # from .views import wp
 # import metaWeblog
 
 """
 This file defines XMLRPC methods for use
-by XBlog. Works with django-xmlrpc
+by XBlog. Works with django-xmlrpc-dx
 """
 
 XMLRPC_METHODS = (
