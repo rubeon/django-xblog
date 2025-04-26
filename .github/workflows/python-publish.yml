@@ -14,9 +14,7 @@ on:
   push:
     tags:
       - v**
-  
-
-  worfklow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: read
