@@ -4,7 +4,7 @@ Blogging application for your Django site
 ## Build Status
 
 [![Run Python Tests](https://github.com/rubeon/django-xblog/actions/workflows/ci.yml/badge.svg)](https://github.com/rubeon/django-xblog/actions/workflows/ci.yml)
-[![PyPI version](https://img.shields.io/pypi/v/django-xblog)
+[![PyPI version](https://img.shields.io/pypi/v/django-xblog)](https://pypi.org/project/django-xblog/)
 
 ## Installation
 
