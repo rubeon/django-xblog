@@ -1,0 +1,10 @@
+[tool.bumpversion]
+current_version = "0.2.3"  # Set this to your current version
+commit = true
+tag = true
+tag_name = "v{new_version}"
+
+[[tool.bumpversion.file]]
+filename = "xblog/__init__.py"
+regex = '__version__ = "([^"]+)"'
+
