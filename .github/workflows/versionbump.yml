@@ -62,7 +62,7 @@ jobs:
 
       - name: Bump version
         run: |
-          bump-my-version ${{ steps.bump-type.outputs.bump_type }}
+          bump-my-version bump ${{ steps.bump-type.outputs.bump_type }}
 
       - name: Push changes and tags
         run: |
