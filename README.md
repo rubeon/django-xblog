@@ -3,7 +3,8 @@ Blogging application for your Django site
 
 ## Build Status
 
-[![Build Status](https://travis-ci.org/rubeon/django-xblog.svg?branch=master)](https://travis-ci.org/rubeon/django-xblog) [![PyPI version](https://badge.fury.io/py/django-xblog.svg)](https://badge.fury.io/py/django-xblog)
+[![Run Python Tests](https://github.com/rubeon/django-xblog/actions/workflows/ci.yml/badge.svg)](https://github.com/rubeon/django-xblog/actions/workflows/ci.yml)[![PyPI version](https://badge.fury.io/py/django-xblog.svg)](https://badge.fury.io/py/django-xblog)
+[![PyPI version](https://badge.fury.io/py/django-xblog.svg)](https://badge.fury.io/py/django-xblog)
 
 ## Installation
 
@@ -50,8 +51,9 @@ Add the dependencies to `INSTALLED_APPS`:
         ...
         # following are for xblog
         'django.contrib.sites',
-        'markdown2',
+        'markdown_deux',
         'xblog',
+	'django_xmlrpc_dx',
     ]
     # Define a site, if not done already!
     SITE_ID=1
